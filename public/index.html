@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>.locale-pending body{visibility:hidden}.language-select{width:auto;min-width:112px;max-width:126px;padding:8px 26px 8px 10px;background:rgba(255,255,255,.03);border:1px solid #3a1510;border-radius:6px;color:#f6ebe5;font-size:14px;cursor:pointer}.language-select:focus{border-color:#ff6a00;outline:none;box-shadow:0 0 0 3px rgba(255,106,0,.2)}.language-select option{background:#1a0605;color:#f6ebe5}.currency-select{min-width:78px;max-width:90px}@media(max-width:640px){.language-select{min-width:88px;padding-inline:7px;font-size:12px}.currency-select{min-width:70px}}</style>
+  <script>document.documentElement.classList.add('locale-pending');(function(){var supported=['uk','ru','en'],lang=null;try{var saved=localStorage.getItem('evilverse-language');if(supported.includes(saved))lang=saved}catch(e){}if(!lang){var choices=navigator.languages||[navigator.language];for(var i=0;i<choices.length;i++){var code=choices[i].toLowerCase().split('-')[0];if(supported.includes(code)){lang=code;break}}}document.documentElement.lang=lang||'uk'})()</script>
+  <meta name="theme-color" content="#0a0404" />
+  <title>EVILVERSE — пекельний Minecraft сервер</title>
+  <meta name="description" content="EVILVERSE — Minecraft сервер з пекельною атмосферою. IP: evilverse.tkmc.net. Привілеї, токени, кейси, івенти та набір у команду: Moder, Helper, Media, Coder." />
+  <link rel="icon" href="/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <canvas id="embers" aria-hidden="true"></canvas>
+
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a href="#home" class="logo" data-tab="home" aria-label="EVILVERSE — головна">
+        <img class="logo-mark" src="/logo.svg" alt="" width="36" height="36" />
+        <span class="logo-text">EVILVERSE</span>
+      </a>
+
+      <nav class="nav" id="nav" aria-label="Основна навігація">
+        <a href="#home" data-tab="home" class="nav-link">Головна</a>
+        <a href="#shop" data-tab="shop" class="nav-link">Магазин</a>
+        <a href="#apply" data-tab="apply" class="nav-link">Заявки</a>
+        <a href="#rules" data-tab="rules" class="nav-link">Правила</a>
+        <a href="#faq" data-tab="faq" class="nav-link">FAQ</a>
+        <a href="#profile" data-tab="profile" class="nav-link">Кабінет</a>
+      </nav>
+
+      <div class="topbar-actions">
+        <label class="sr-only" for="languageSelect">Мова сайту</label>
+        <select class="language-select" id="languageSelect" aria-label="Мова сайту">
+          <option value="uk">Українська</option>
+          <option value="ru">Русский</option>
+          <option value="en">English</option>
+        </select>
+        <label class="sr-only" for="currencySelect">Валюта сайту</label>
+        <select class="language-select currency-select no-i18n" id="currencySelect" aria-label="Валюта сайту">
+          <option value="UAH">UAH</option>
+          <option value="RUB">RUB</option>
+          <option value="USD">USD</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" id="cartBtn" aria-label="Відкрити кошик">
+          <svg class="cart-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 2-1.6L22 8H6"/><circle cx="10" cy="21" r="1"/><circle cx="19" cy="21" r="1"/></svg>
+          <span class="cart-label">Кошик</span> <span class="badge" id="cartCount">0</span>
+        </button>
+        <button class="burger" id="burger" aria-label="Меню" aria-expanded="false" aria-controls="nav">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ HOME ============ -->
+    <section class="page" id="page-home" data-page="home">
+      <div class="hero">
+        <div class="hero-bg" aria-hidden="true"><img src="/hero.png" alt="" /></div>
+        <div class="container hero-inner">
+          <p class="eyebrow"><span class="pulse-dot" id="statusDot"></span> <span id="statusText">Перевіряємо статус сервера...</span></p>
+          <h1 class="hero-title glitch" data-text="EVILVERSE">EVILVERSE</h1>
+          <p class="hero-sub">Пекельний Minecraft сервер, де виживають лише найзліші. Кейси, клани, щотижневі івенти та власна економіка.</p>
+
+          <div class="ip-box">
+            <span class="ip-label">IP сервера</span>
+            <code class="ip-value" id="ipValue">evilverse.tkmc.net</code>
+            <button class="btn btn-fire" id="copyIp">Скопіювати IP</button>
+          </div>
+
+          <div class="hero-actions">
+            <a href="https://discord.gg/8eHG2YsePC" target="_blank" rel="noopener" class="btn btn-discord">Discord сервер</a>
+            <a href="#shop" data-tab="shop" class="btn btn-ghost">Магазин донату</a>
+            <a href="#apply" data-tab="apply" class="btn btn-ghost">Стати адміном</a>
+          </div>
+
+          <div class="stats">
+            <div class="stat"><span class="stat-num" id="statOnline">—</span><span class="stat-label">Гравців онлайн</span></div>
+            <div class="stat"><span class="stat-num" id="statMax">—</span><span class="stat-label">Слотів</span></div>
+            <div class="stat"><span class="stat-num" id="statDiscord">—</span><span class="stat-label">У Discord</span></div>
+            <div class="stat"><span class="stat-num" id="statVersion">1.8 – 26.2</span><span class="stat-label">Версія</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="container section">
+        <h2 class="section-title">Як почати грати</h2>
+        <ol class="steps">
+          <li class="step reveal"><span class="step-num">1</span><h3>Запусти Minecraft</h3><p>Java Edition 1.8 – 26.2, будь-який лаунчер. Ліцензія не обов&apos;язкова.</p></li>
+          <li class="step reveal"><span class="step-num">2</span><h3>Додай сервер</h3><p>Мережева гра → Додати сервер → встав <b>evilverse.tkmc.net</b></p></li>
+          <li class="step reveal"><span class="step-num">3</span><h3>Зареєструйся</h3><p>Введи <code translate="no">/reg &lt;password&gt; &lt;password&gt;</code> і запам&apos;ятай пароль.</p></li>
+          <li class="step reveal"><span class="step-num">4</span><h3>Заходь у Discord</h3><p>Новини, івенти, розіграші та підтримка — все там.</p></li>
+        </ol>
+      </div>
+
+      <div class="container section">
+        <h2 class="section-title">Чому EVILVERSE</h2>
+        <div class="features">
+          <article class="feature reveal"><div class="feature-icon">01</div><h3>Пекельні івенти</h3><p>Щосуботи — боси, PvP-турніри, полювання на скарби з призами у токенах.</p></article>
+          <article class="feature reveal"><div class="feature-icon">02</div><h3>Власна економіка</h3><p>Аукціон, магазини гравців, токени та кейси з рідкісними предметами.</p></article>
+          <article class="feature reveal"><div class="feature-icon">03</div><h3>Клани та війни</h3><p>Створюй клан, захоплюй території та піднімайся у топ.</p></article>
+          <article class="feature reveal"><div class="feature-icon">04</div><h3>Чесна адміністрація</h3><p>Без адмін-абузу. Скарги розглядаються у Discord протягом доби.</p></article>
+          <article class="feature reveal"><div class="feature-icon">05</div><h3>Анти-чит</h3><p>Захист від читів, x-ray та ботів. Грай чесно — і ми граємо чесно.</p></article>
+          <article class="feature reveal"><div class="feature-icon">06</div><h3>Без лагів</h3><p>Оптимізоване ядро та стабільний TPS навіть на івентах.</p></article>
+        </div>
+      </div>
+
+      <div class="container section">
+        <div class="event-card reveal">
+          <div>
+            <p class="eyebrow">Наступний івент</p>
+            <h2 class="event-title">Битва у Безодні</h2>
+            <p class="muted">Кожної суботи о 18:00 (Київ). Переможець отримує 500 токенів і кейс Привілегій.</p>
+          </div>
+          <div class="countdown" id="countdown" aria-live="polite">
+            <div><span id="cdD">00</span><small>днів</small></div>
+            <div><span id="cdH">00</span><small>годин</small></div>
+            <div><span id="cdM">00</span><small>хвилин</small></div>
+            <div><span id="cdS">00</span><small>секунд</small></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="container section">
+        <div class="feed-grid">
+          <div class="feed-card reveal">
+            <h2 class="section-title">Топ донатерів</h2>
+            <ol class="donors" id="topDonors" aria-live="polite"><li class="feed-empty">Завантаження...</li></ol>
+          </div>
+          <div class="feed-card reveal">
+            <h2 class="section-title">Нещодавні покупки</h2>
+            <ul class="recent" id="recentPurchases" aria-live="polite"><li class="feed-empty">Завантаження...</li></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="container section">
+        <h2 class="section-title">Новини</h2>
+        <div class="news">
+          <article class="news-item reveal"><time>Сезон 1</time><h3>Відкриття EVILVERSE</h3><p>Сервер запущено! Перші 50 гравців отримують 50 токенів — пиши в Discord.</p></article>
+          <article class="news-item reveal"><time>Акція</time><h3>Промокод EVIL10</h3><p>Знижка 10% на все в магазині. Вводь промокод у кошику.</p></article>
+          <article class="news-item reveal"><time>Набір</time><h3>Шукаємо команду</h3><p>Відкрито набір на Moder, Helper, Media та Coder. Подавай заявку на сайті.</p></article>
+        </div>
+      </div>
+
+      <div class="container section">
+        <div class="cta reveal">
+          <h2>Готовий спуститись у пекло?</h2>
+          <p>Приєднуйся до нашої спільноти у Discord — там вся движуха.</p>
+          <a href="https://discord.gg/8eHG2YsePC" target="_blank" rel="noopener" class="btn btn-fire btn-lg">Приєднатися до Discord</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SHOP ============ -->
+    <section class="page" id="page-shop" data-page="shop" hidden>
+      <div class="container section">
+        <div class="page-head">
+          <p class="eyebrow">Донат магазин</p>
+          <h1 class="page-title">Магазин EVILVERSE</h1>
+          <p class="muted">Натисни на товар, щоб переглянути деталі. Видача — після підтвердження оплати (зазвичай до 30 хвилин).</p>
+        </div>
+
+        <div class="shop-filters" role="tablist" aria-label="Категорії магазину">
+          <button class="chip active" data-cat="all" role="tab" aria-selected="true">Все</button>
+          <button class="chip" data-cat="rank" role="tab" aria-selected="false">Привілеї</button>
+          <button class="chip" data-cat="tokens" role="tab" aria-selected="false">Токени</button>
+          <button class="chip" data-cat="case" role="tab" aria-selected="false">Кейси</button>
+          <button class="chip" data-cat="extra" role="tab" aria-selected="false">Послуги</button>
+        </div>
+
+        <div class="shop-grid" id="shopGrid"></div>
+
+        <h2 class="section-title mt">Порівняння привілеїв</h2>
+        <div class="table-wrap">
+          <table class="compare" id="compareTable"></table>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-card"><h3>Як проходить оплата</h3><ol><li>Додай товари в кошик</li><li>Вкажи нік і обери спосіб оплати</li><li>Оплати за інструкцією та збережи код замовлення</li><li>Створи тікет у Discord з кодом — отримаєш товар</li></ol></div>
+          <div class="info-card"><h3>Гарантії</h3><ul><li>Привілеї «Назавжди» не зникають між сезонами</li><li>Можна доплатити різницю і підвищити привілей</li><li>Якщо товар не видано за 24 год — повернемо кошти</li></ul></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ APPLY ============ -->
+    <section class="page" id="page-apply" data-page="apply" hidden>
+      <div class="container section">
+        <div class="page-head">
+          <p class="eyebrow">Набір у команду</p>
+          <h1 class="page-title">Подати заявку</h1>
+          <p class="muted">Обери посаду. Заповнюй чесно та розгорнуто — відписки по одному слову відхиляються автоматично.</p>
+        </div>
+
+        <div class="roles" id="roles"></div>
+
+        <div class="apply-wrap" id="applyWrap" hidden>
+          <aside class="role-info" id="roleInfo"></aside>
+          <form class="form" id="applyForm" novalidate>
+            <div class="progress" aria-hidden="true"><div class="progress-bar" id="formProgress"></div></div>
+            <div id="formFields"></div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-ghost" id="saveDraft">Зберегти чернетку</button>
+              <button type="submit" class="btn btn-fire">Надіслати заявку</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RULES ============ -->
+    <section class="page" id="page-rules" data-page="rules" hidden>
+      <div class="container section narrow">
+        <div class="page-head">
+          <p class="eyebrow">Обов&apos;язково до прочитання</p>
+          <h1 class="page-title">Правила сервера</h1>
+          <p class="muted">Незнання правил не звільняє від відповідальності.</p>
+        </div>
+        <label class="search">
+          <span class="sr-only">Пошук по правилах</span>
+          <input type="search" id="rulesSearch" placeholder="Пошук по правилах... (наприклад: чити)" />
+        </label>
+        <div class="accordion" id="rulesList"></div>
+      </div>
+    </section>
+
+    <!-- ============ FAQ ============ -->
+    <section class="page" id="page-faq" data-page="faq" hidden>
+      <div class="container section narrow">
+        <div class="page-head">
+          <p class="eyebrow">Питання та відповіді</p>
+          <h1 class="page-title">FAQ</h1>
+        </div>
+        <div class="accordion" id="faqList"></div>
+        <div class="cta mt">
+          <h2>Не знайшов відповідь?</h2>
+          <p>Створи тікет у Discord — хелпери відповідають швидко.</p>
+          <a href="https://discord.gg/8eHG2YsePC" target="_blank" rel="noopener" class="btn btn-fire">Відкрити Discord</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PROFILE ============ -->
+    <section class="page" id="page-profile" data-page="profile" hidden>
+      <div class="container section">
+        <div class="page-head">
+          <p class="eyebrow">Збережено на цьому пристрої</p>
+          <h1 class="page-title">Мій кабінет</h1>
+          <p class="muted">Тут зберігаються твої заявки та замовлення, щоб ти не загубив коди.</p>
+        </div>
+        <div class="profile-grid">
+          <div class="info-card"><h3>Мої замовлення</h3><div id="myOrders" class="list"></div></div>
+          <div class="info-card"><h3>Мої заявки</h3><div id="myApps" class="list"></div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>
+        <a href="#home" data-tab="home" class="logo"><img class="logo-mark" src="/logo.svg" alt="" width="36" height="36" /><span class="logo-text">EVILVERSE</span></a>
+        <p class="muted small">IP: evilverse.tkmc.net</p>
+      </div>
+      <div class="footer-links">
+        <a href="#shop" data-tab="shop">Магазин</a>
+        <a href="#apply" data-tab="apply">Заявки</a>
+        <a href="#rules" data-tab="rules">Правила</a>
+        <a href="https://discord.gg/8eHG2YsePC" target="_blank" rel="noopener">Discord</a>
+      </div>
+      <p class="muted small">EVILVERSE не пов&apos;язаний з Mojang AB. © <span id="year"></span></p>
+    </div>
+  </footer>
+
+  <button class="to-top" id="toTop" aria-label="Нагору">↑</button>
+
+  <!-- Modal -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="modal-close" data-close aria-label="Закрити">×</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <!-- Cart drawer -->
+  <aside class="drawer" id="drawer" aria-label="Кошик" hidden>
+    <div class="drawer-backdrop" data-close-drawer></div>
+    <div class="drawer-box">
+      <div class="drawer-head">
+        <h2>Кошик</h2>
+        <button class="modal-close" data-close-drawer aria-label="Закрити кошик">×</button>
+      </div>
+      <div class="drawer-body" id="cartItems"></div>
+      <div class="drawer-foot">
+        <div class="promo">
+          <label class="sr-only" for="promoInput">Промокод</label>
+          <input id="promoInput" placeholder="Промокод" autocomplete="off" />
+          <button class="btn btn-ghost btn-sm" id="promoApply">OK</button>
+        </div>
+        <div class="total-row"><span>Сума</span><span id="cartSubtotal">0 грн</span></div>
+        <div class="total-row discount" id="discountRow" hidden><span>Знижка</span><span id="cartDiscount">0 грн</span></div>
+        <div class="total-row big"><span>До сплати</span><span id="cartTotal">0 грн</span></div>
+        <button class="btn btn-fire btn-block" id="checkoutBtn">Оформити замовлення</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <script src="/i18n-extra.js"></script>
+  <script src="/i18n.js" defer></script>
+  <script src="/currency.js" defer></script>
+  <script src="/index.js" defer></script>
+</body>
+</html>
