@@ -62,6 +62,13 @@ window.EV_I18N_EXTRA = (() => {
     "Правитель усього EVILVERSE.": "Правитель всего EVILVERSE.",
     "Стресостійкість (1–10)": "Стрессоустойчивость (1–10)", "Середні перегляди на відео": "Средние просмотры на видео",
     "Заявка на посаду": "Заявка на должность", "Код замовлення": "Код заказа", "вигідно": "выгодно",
+    "Monobank — будь-яка картка": "Monobank — любая карта",
+    "Visa / Mastercard, Apple Pay, Google Pay · зараховується автоматично": "Visa / Mastercard, Apple Pay, Google Pay · зачисляется автоматически",
+    "Натисни «Оплатити» — відкриється банка monobank. Підходить будь-яка картка, Apple Pay чи Google Pay": "Нажми «Оплатить» — откроется банка monobank. Подойдёт любая карта, Apple Pay или Google Pay",
+    "Сума:": "Сумма:",
+    "У коментарі до платежу встав код": "В комментарии к платежу вставь код",
+    "— без нього оплата не зарахується автоматично": "— без него оплата не зачислится автоматически",
+    "Товар прийде в гру сам протягом 1–2 хвилин після оплати. Статус видно у вкладці «Кабінет»": "Товар придёт в игру сам в течение 1–2 минут после оплаты. Статус виден во вкладке «Кабинет»",
   };
   const en = {
     "Валюта сайту": "Site currency",
@@ -124,6 +131,13 @@ window.EV_I18N_EXTRA = (() => {
     "Правитель усього EVILVERSE.": "Ruler of all EVILVERSE.",
     "Стресостійкість (1–10)": "Stress resistance (1–10)", "Середні перегляди на відео": "Average views per video",
     "Заявка на посаду": "Application for the role", "Код замовлення": "Order code", "вигідно": "best value",
+    "Monobank — будь-яка картка": "Monobank — any card",
+    "Visa / Mastercard, Apple Pay, Google Pay · зараховується автоматично": "Visa / Mastercard, Apple Pay, Google Pay · credited automatically",
+    "Натисни «Оплатити» — відкриється банка monobank. Підходить будь-яка картка, Apple Pay чи Google Pay": "Press “Pay” — a monobank jar opens. Any card, Apple Pay or Google Pay works",
+    "Сума:": "Amount:",
+    "У коментарі до платежу встав код": "Paste this code into the payment comment:",
+    "— без нього оплата не зарахується автоматично": "— without it the payment won't be credited automatically",
+    "Товар прийде в гру сам протягом 1–2 хвилин після оплати. Статус видно у вкладці «Кабінет»": "Your purchase arrives in game automatically within 1–2 minutes after payment. Track it in the “Profile” tab",
   };
 
   const plural = (n, one, few, many) => {
@@ -152,6 +166,8 @@ window.EV_I18N_EXTRA = (() => {
     [/^Рівень (\d+) з (\d+)$/, (m, lang) => (isRu(lang) ? `Уровень ${m[1]} из ${m[2]}` : `Tier ${m[1]} of ${m[2]}`)],
     [/^\+ всі можливості привілею (.+)$/, (m, lang, tr) => (isRu(lang) ? `+ все возможности привилегии ${tr(m[1])}` : `+ everything from the ${tr(m[1])} rank`)],
     [/^Питання для (.+)$/, (m, lang, tr) => (isRu(lang) ? `Вопросы для ${tr(m[1])}` : `Questions for ${tr(m[1])}`)],
+    [/^Оплата: (.+)$/, (m, lang, tr) => (isRu(lang) ? `Оплата: ${tr(m[1])}` : `Payment: ${tr(m[1])}`)],
+    [/^Оплатити (.+)$/, (m, lang) => (isRu(lang) ? `Оплатить ${m[1]}` : `Pay ${m[1].replace(/(\d+)\s?грн/g, "$1 UAH")}`)],
     [/^Покупок: (\d+)$/, (m, lang) => (isRu(lang) ? `Покупок: ${m[1]}` : `Purchases: ${m[1]}`)],
   ];
 

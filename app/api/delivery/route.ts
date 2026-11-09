@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { ensureDeliveryColumns } from "@/lib/db/ensure"
 import { orders } from "@/lib/db/schema"
 import { sendDiscordWebhook } from "@/lib/server-utils"
+import { checkMonoPayments } from "@/lib/mono"
 
 export const dynamic = "force-dynamic"
 
@@ -28,6 +29,8 @@ export async function GET(req: Request) {
   const denied = check(req)
   if (denied) return denied
   await ensureDeliveryColumns()
+  // Сервер опитує сайт кожні ~15 с — заодно перевіряємо банку monobank (сама обмежує частоту до 1/хв)
+  await checkMonoPayments()
   const rows = await db
     .select({ code: orders.code, nick: orders.nick, giftTo: orders.giftTo, items: orders.items })
     .from(orders)

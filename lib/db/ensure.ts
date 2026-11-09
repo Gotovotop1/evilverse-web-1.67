@@ -38,6 +38,17 @@ export function ensureDeliveryColumns() {
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_log jsonb;
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_manual jsonb;
       CREATE INDEX IF NOT EXISTS orders_delivery_pending ON orders (status, delivery_status);
+      -- Автоматична оплата через банку monobank
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_log jsonb;
+      CREATE TABLE IF NOT EXISTS mono_payments (
+        id text PRIMARY KEY,
+        code text,
+        amount integer NOT NULL,
+        comment text,
+        paid_at timestamptz NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE TABLE IF NOT EXISTS app_kv (key text PRIMARY KEY, value text NOT NULL);
     `)
     .then(() => undefined)
     .catch((error) => {

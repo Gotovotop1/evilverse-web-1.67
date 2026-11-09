@@ -20,6 +20,16 @@ const CONFIG = {
   TOKEN_RATE: 5, // 1 грн = 5 фішок (для оплати привілеїв фішками)
 };
 
+// Автоматичні способи оплати вмикаються на сервері (змінні MONO_TOKEN і MONO_JAR у Vercel) — тут лише підхоплюємо.
+fetch("/api/pay-config").then((r) => (r.ok ? r.json() : null)).then((cfg) => {
+  if (!cfg?.mono?.link) return;
+  const { mono, ...rest } = CONFIG.PAYMENTS;
+  CONFIG.PAYMENTS = {
+    mono: { ...mono, name: "Monobank — будь-яка картка", short: "Картка", note: "Visa / Mastercard, Apple Pay, Google Pay · зараховується автоматично", details: cfg.mono.link, available: true, status: "", auto: true },
+    ...rest,
+  };
+}).catch(() => {});
+
 /* =========================================================
    ДАНІ МАГАЗИНУ
    ========================================================= */
@@ -930,11 +940,21 @@ function orderText(o) {
   return `Замовлення ${o.code}\nНік: ${o.nick}\nDiscord: ${o.discord}${gift}\nТовари: ${o.items.map((i) => `${i.name}${i.label ? " (" + i.label + ")" : ""} x${i.qty}`).join(", ")}\nСума: ${moneyUah(o.total)}${window.EvilCurrency && window.EvilCurrency.code !== "UAH" ? ` (≈ ${money(o.total)})` : ""}\nОплата: ${CONFIG.PAYMENTS[o.method].name}`;
 }
 
+// Посилання на банку з уже заповненою сумою (грн) і кодом у коментарі
+function monoPayUrl(link, o) {
+  const u = new URL(link);
+  u.searchParams.set("a", String(o.total));
+  u.searchParams.set("t", o.code);
+  return u.toString();
+}
+
 function showPayment(o) {
   const m = CONFIG.PAYMENTS[o.method];
   const steps = {
     casebal: [`Зайди на сайт Case Bal та поповни баланс / створи депозит-код на <b>${moneyFor(o.total, o.method)}</b>`, `Передай депозит на акаунт адміністрації (${esc(m.details)})`, "Зроби скріншот підтвердження"],
-    mono: [`Переведи <b>${moneyFor(o.total, o.method)}</b> за реквізитами нижче`, `У коментарі вкажи код <b>${o.code}</b>`, "Збережи квитанцію"],
+    mono: m.auto
+      ? ["Натисни «Оплатити» — відкриється банка monobank. Підходить будь-яка картка, Apple Pay чи Google Pay", `Сума: <b>${moneyFor(o.total, o.method)}</b>`, `У коментарі до платежу встав код <b>${o.code}</b> — без нього оплата не зарахується автоматично`, "Товар прийде в гру сам протягом 1–2 хвилин після оплати. Статус видно у вкладці «Кабінет»"]
+      : [`Переведи <b>${moneyFor(o.total, o.method)}</b> за реквізитами нижче`, `У коментарі вкажи код <b>${o.code}</b>`, "Збережи квитанцію"],
     privat: [`Переведи <b>${moneyFor(o.total, o.method)}</b> на карту нижче`, `У коментарі вкажи код <b>${o.code}</b>`, "Збережи квитанцію"],
     crypto: [`Відправ еквівалент <b>${moneyFor(o.total, o.method)}</b> у USDT (мережа TRC20)`, "Перевір мережу — інша мережа = втрата коштів", "Збережи хеш транзакції (TxID)"],
     sbp: [`Переведи еквівалент <b>${moneyFor(o.total, o.method)}</b> у рублях за реквізитами нижче`, `У коментарі вкажи код <b>${o.code}</b>`, "Збережи квитанцію"],
@@ -948,9 +968,10 @@ function showPayment(o) {
     <div class="instructions">
       <span class="muted small">Код замовлення</span>
       <div class="copy-row"><code>${o.code}</code><button class="btn btn-ghost btn-sm" data-copy="${o.code}">Копіювати</button></div>
-      <span class="muted small">Реквізити</span>
-      <div class="copy-row"><code>${esc(m.details)}</code><button class="btn btn-ghost btn-sm" data-copy="${esc(m.details)}">Копіювати</button></div>
-      <ol>${steps.map((s) => `<li>${s}</li>`).join("")}<li>Створи тікет «Донат» у Discord, встав код і скрін оплати</li></ol>
+      ${m.auto ? "" : `<span class="muted small">Реквізити</span>
+      <div class="copy-row"><code>${esc(m.details)}</code><button class="btn btn-ghost btn-sm" data-copy="${esc(m.details)}">Копіювати</button></div>`}
+      <ol>${steps.map((s) => `<li>${s}</li>`).join("")}${m.auto ? "" : "<li>Створи тікет «Донат» у Discord, встав код і скрін оплати</li>"}</ol>
+      ${m.auto ? `<a class="btn btn-fire btn-block" href="${esc(monoPayUrl(m.details, o))}" target="_blank" rel="noopener">Оплатити ${moneyFor(o.total, o.method)}</a>` : ""}
     </div>
     <div class="m-actions">
       <button class="btn btn-ghost" id="copyOrder">Копіювати для тікету</button>

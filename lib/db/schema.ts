@@ -24,4 +24,6 @@ export const orders = pgTable("orders", {
   deliveredAt: timestamp("delivered_at", { withTimezone: true }),
   deliveryLog: jsonb("delivery_log").$type<string[]>(),
   deliveryManual: jsonb("delivery_manual").$type<string[]>(),
+  // Автоматична оплата (monobank): що і коли надійшло
+  paymentLog: jsonb("payment_log").$type<string[]>(),
 })

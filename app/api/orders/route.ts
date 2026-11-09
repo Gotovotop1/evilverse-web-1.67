@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { orders, type OrderItem } from "@/lib/db/schema"
 import { ensureDeliveryColumns } from "@/lib/db/ensure"
 import { clientIp, rateLimited, sendDiscordWebhook } from "@/lib/server-utils"
+import { monoConfigured } from "@/lib/mono"
 
 export const dynamic = "force-dynamic"
 
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
 
   if (!NICK_RE.test(nick)) return json({ error: "bad_nick" }, 400)
   if (discord.length < 2 || discord.length > 40) return json({ error: "bad_discord" }, 400)
-  if (!ENABLED_PAYMENTS.includes(method)) return json({ error: "bad_method" }, 400)
+  if (!ENABLED_PAYMENTS.includes(method) && !(method === "mono" && monoConfigured())) return json({ error: "bad_method" }, 400)
   if (giftTo && (!NICK_RE.test(giftTo) || giftTo.toLowerCase() === nick.toLowerCase())) return json({ error: "bad_gift_nick" }, 400)
   if (promo && !(promo in PROMO)) return json({ error: "bad_promo" }, 400)
   if (!Array.isArray(body?.items) || body.items.length < 1 || body.items.length > 20) return json({ error: "bad_items" }, 400)

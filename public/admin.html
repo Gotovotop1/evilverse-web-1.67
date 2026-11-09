@@ -48,6 +48,9 @@
     pre { white-space: pre-wrap; margin: 6px 0 0; font-family: ui-monospace, monospace; font-size: 12px; }
     .manual { color: var(--amber); font-size: 14px; }
     .empty { text-align: center; padding: 40px; color: var(--muted); }
+    .mono { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 14px; display: grid; gap: 4px; }
+    .mono .err { color: #ff6b6b; } .mono .ok { color: var(--green); }
+    .paylog { color: var(--green); font-size: 14px; }
     @media (max-width: 640px) { header h1 { font-size: 18px; } }
   </style>
 </head>
@@ -72,6 +75,7 @@
       <button class="fire" type="submit">Увійти</button>
       <span class="muted" id="loginError"></span>
     </form>
+    <div class="mono" id="mono" hidden></div>
     <div class="orders" id="orders"></div>
   </main>
 
@@ -95,6 +99,19 @@
       legacy: ["delivered", "видано раніше (вручну)"],
     };
     const STATUS = { pending: "очікує оплату", paid: "оплачено", cancelled: "скасовано" };
+    const METHODS = { mono: "monobank (авто)", privat: "Приват", crypto: "USDT" };
+
+    function renderMono(m) {
+      const box = $("#mono");
+      if (!m || !m.configured) { box.hidden = true; return; }
+      box.hidden = false;
+      const when = (s) => s ? esc(new Date(s.split(" ")[0]).toLocaleString("uk-UA")) : "ще не було";
+      const err = m.lastError && (!m.lastOk || m.lastError.split(" ")[0] > m.lastOk)
+        ? `<div class="err">Помилка перевірки банки: ${esc(m.lastError)}</div>` : "";
+      const un = (m.unmatched || []).length
+        ? `<details><summary>Платежі в банку без коду замовлення (${m.unmatched.length}) — підтверди вручну</summary><pre>${esc(m.unmatched.map((u) => `${new Date(u.paidAt).toLocaleString("uk-UA")} · ${u.amount} грн · ${u.comment || "без коментаря"}`).join("\n"))}</pre></details>` : "";
+      box.innerHTML = `<div><b>Банка monobank</b> · автоперевірка оплат · <span class="ok">остання успішна: ${when(m.lastOk)}</span></div>${err}${un}`;
+    }
 
     async function api(method, body, query = "") {
       const res = await fetch("/api/admin/orders" + query, {
@@ -119,6 +136,7 @@
         const delivery = o.status === "paid" ? `<span class="badge b-${d[0]}">${d[1]}</span>` : "";
         const gift = o.giftTo ? ` → подарунок для <b>${esc(o.giftTo)}</b>` : "";
         const manual = (o.deliveryManual || []).length ? `<div class="manual">Видати вручну: ${esc(o.deliveryManual.join(", "))}</div>` : "";
+        const paylog = (o.paymentLog || []).length ? `<div class="paylog">${esc(o.paymentLog.join(" · "))}</div>` : "";
         const log = (o.deliveryLog || []).length ? `<details><summary>Журнал видачі</summary><pre>${esc(o.deliveryLog.join("\n"))}</pre></details>` : "";
         const actions = [
           o.status !== "paid" ? `<button class="ok" data-act="paid" data-code="${esc(o.code)}">✔ Оплачено</button>` : "",
@@ -134,10 +152,10 @@
             <span class="grow"></span>
             <span class="muted">${esc(new Date(o.createdAt).toLocaleString("uk-UA"))}</span>
           </div>
-          <div>Нік: <b>${esc(o.nick)}</b>${gift} · Discord: ${esc(o.discord)} · Оплата: ${esc(o.method)}${o.promo ? " · промокод " + esc(o.promo) : ""}</div>
+          <div>Нік: <b>${esc(o.nick)}</b>${gift} · Discord: ${esc(o.discord)} · Оплата: ${esc(METHODS[o.method] || o.method)}${o.promo ? " · промокод " + esc(o.promo) : ""}</div>
           <div class="items">${o.items.map(item).join(" · ")}</div>
           <div class="total">Сума: ${esc(o.total)} грн${o.discount ? ` <span class="muted">(знижка ${esc(o.discount)})</span>` : ""}</div>
-          ${manual}${log}
+          ${paylog}${manual}${log}
           ${actions ? `<div class="actions">${actions}</div>` : ""}
         </article>`;
       }).join("");
@@ -148,6 +166,7 @@
       try {
         const data = await api("GET", null, "?status=" + encodeURIComponent($("#filter").value));
         render(data.orders);
+        renderMono(data.mono);
       } catch (e) {
         if (String(e.message) !== "unauthorized") $("#orders").innerHTML = `<div class="empty">Помилка: ${esc(e.message)}</div>`;
       }
