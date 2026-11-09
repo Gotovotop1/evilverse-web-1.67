@@ -99,18 +99,22 @@
       legacy: ["delivered", "видано раніше (вручну)"],
     };
     const STATUS = { pending: "очікує оплату", paid: "оплачено", cancelled: "скасовано" };
-    const METHODS = { mono: "monobank (авто)", privat: "Приват", crypto: "USDT" };
+    const METHODS = { mono: "monobank (авто)", ton: "USDT TON (авто)", privat: "Приват", crypto: "USDT TRC20 (авто)" };
 
-    function renderMono(m) {
+    const PROVIDERS = { mono: ["Банка monobank", "грн"], ton: ["USDT (TON)", "USDT"], tron: ["USDT (TRC20)", "USDT"] };
+    function renderPayments(p) {
       const box = $("#mono");
-      if (!m || !m.configured) { box.hidden = true; return; }
-      box.hidden = false;
       const when = (s) => s ? esc(new Date(s.split(" ")[0]).toLocaleString("uk-UA")) : "ще не було";
-      const err = m.lastError && (!m.lastOk || m.lastError.split(" ")[0] > m.lastOk)
-        ? `<div class="err">Помилка перевірки банки: ${esc(m.lastError)}</div>` : "";
-      const un = (m.unmatched || []).length
-        ? `<details><summary>Платежі в банку без коду замовлення (${m.unmatched.length}) — підтверди вручну</summary><pre>${esc(m.unmatched.map((u) => `${new Date(u.paidAt).toLocaleString("uk-UA")} · ${u.amount} грн · ${u.comment || "без коментаря"}`).join("\n"))}</pre></details>` : "";
-      box.innerHTML = `<div><b>Банка monobank</b> · автоперевірка оплат · <span class="ok">остання успішна: ${when(m.lastOk)}</span></div>${err}${un}`;
+      const parts = Object.entries(p || {}).filter(([, m]) => m && m.configured).map(([key, m]) => {
+        const [title, unit] = PROVIDERS[key] || [key, ""];
+        const err = m.lastError && (!m.lastOk || m.lastError.split(" ")[0] > m.lastOk)
+          ? `<div class="err">Помилка перевірки: ${esc(m.lastError)}</div>` : "";
+        const un = (m.unmatched || []).length
+          ? `<details><summary>${key === "tron" ? "Платежі, сума яких не збіглася із замовленням" : "Платежі без коду замовлення"} (${m.unmatched.length}) — підтверди вручну</summary><pre>${esc(m.unmatched.map((u) => `${new Date(u.paidAt).toLocaleString("uk-UA")} · ${u.amount} ${unit} · ${u.comment || "без коментаря"}`).join("\n"))}</pre></details>` : "";
+        return `<div><b>${title}</b> · автоперевірка оплат · <span class="ok">остання успішна: ${when(m.lastOk)}</span></div>${err}${un}`;
+      });
+      box.hidden = !parts.length;
+      box.innerHTML = parts.join("");
     }
 
     async function api(method, body, query = "") {
@@ -154,7 +158,7 @@
           </div>
           <div>Нік: <b>${esc(o.nick)}</b>${gift} · Discord: ${esc(o.discord)} · Оплата: ${esc(METHODS[o.method] || o.method)}${o.promo ? " · промокод " + esc(o.promo) : ""}</div>
           <div class="items">${o.items.map(item).join(" · ")}</div>
-          <div class="total">Сума: ${esc(o.total)} грн${o.discount ? ` <span class="muted">(знижка ${esc(o.discount)})</span>` : ""}</div>
+          <div class="total">Сума: ${esc(o.total)} грн${o.payAmount ? ` = ${esc(o.payAmount)} USDT` : ""}${o.discount ? ` <span class="muted">(знижка ${esc(o.discount)})</span>` : ""}</div>
           ${paylog}${manual}${log}
           ${actions ? `<div class="actions">${actions}</div>` : ""}
         </article>`;
@@ -166,7 +170,7 @@
       try {
         const data = await api("GET", null, "?status=" + encodeURIComponent($("#filter").value));
         render(data.orders);
-        renderMono(data.mono);
+        renderPayments(data.payments);
       } catch (e) {
         if (String(e.message) !== "unauthorized") $("#orders").innerHTML = `<div class="empty">Помилка: ${esc(e.message)}</div>`;
       }

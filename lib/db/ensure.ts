@@ -48,6 +48,16 @@ export function ensureDeliveryColumns() {
         paid_at timestamptz NOT NULL,
         created_at timestamptz NOT NULL DEFAULT now()
       );
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS pay_amount text;
+      CREATE TABLE IF NOT EXISTS crypto_payments (
+        id text PRIMARY KEY,
+        network text NOT NULL,
+        code text,
+        amount bigint NOT NULL,
+        comment text,
+        paid_at timestamptz NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now()
+      );
       CREATE TABLE IF NOT EXISTS app_kv (key text PRIMARY KEY, value text NOT NULL);
     `)
     .then(() => undefined)

@@ -31,6 +31,6 @@ export const PROMO: Record<string, number> = { EVIL10: 10, START15: 15, HELL20: 
 
 export const THIRTY_DAY_RATE = 0.4
 
-export const ENABLED_PAYMENTS = ["privat", "crypto"]
+export const ENABLED_PAYMENTS = ["privat", "crypto", "ton"]
 
 export const NICK_RE = /^[A-Za-z0-9_]{3,16}$/

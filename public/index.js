@@ -11,7 +11,7 @@ const CONFIG = {
   PAYMENTS: {
     // Усі способи показуються завжди, незалежно від мови. available: false — спосіб видно, але вибрати не можна.
     privat: { name: "ПриватБанк", short: "Карта Приват", note: "Переказ на карту", currency: "UAH", details: "5168 7521 1703 7047" },
-    crypto: { name: "Крипта USDT (TRC20)", short: "USDT", note: "Без комісії банку", currency: "USDT", details: "TX6eXAM6TuyUxu5TDSmEW2PwgA3dKeTvaE" },
+    crypto: { name: "Крипта USDT (TRC20)", short: "USDT", note: "Без комісії банку", currency: "USDT", details: "TD3okxejs9zbeMELTBusYBeeXCUYZkndhE" },
     mono: { name: "Monobank", short: "Карта Mono", note: "Переказ на карту / банку", currency: "UAH", details: "Банка: https://send.monobank.ua/ (вкажи свою)", available: false, status: "В розробці" },
     casebal: { name: "Депозит Case Bal", short: "Case Bal", note: "Поповнення балансом / депозит-кодом", currency: "UAH", details: "Нік адміна для передачі: EvilverseAdmin", available: false, status: "В розробці" },
     sbp: { name: "СБП", short: "СБП", note: "Переказ за номером телефону", currency: "RUB", details: "—", available: false, status: "Тимчасово недоступно" },
@@ -20,13 +20,21 @@ const CONFIG = {
   TOKEN_RATE: 5, // 1 грн = 5 фішок (для оплати привілеїв фішками)
 };
 
-// Автоматичні способи оплати вмикаються на сервері (змінні MONO_TOKEN і MONO_JAR у Vercel) — тут лише підхоплюємо.
+// Автоматичні способи оплати вмикаються на сервері (monobank — змінні MONO_TOKEN і MONO_JAR у Vercel;
+// гаманці USDT — у lib/ton.ts і lib/tron.ts). Порядок: спершу автоматичні, потім недоступні, у самому низу — запасні.
 fetch("/api/pay-config").then((r) => (r.ok ? r.json() : null)).then((cfg) => {
-  if (!cfg?.mono?.link) return;
-  const { mono, ...rest } = CONFIG.PAYMENTS;
+  if (!cfg?.mono?.link && !cfg?.ton?.wallet && !cfg?.tron?.wallet) return;
+  const { mono, privat, crypto, ...rest } = CONFIG.PAYMENTS;
+  const auto = {};
+  if (cfg.mono?.link) auto.mono = { ...mono, name: "Будь-яка картка (UAH)", short: "Картка", note: "Visa / Mastercard, Apple Pay, Google Pay · зараховується автоматично", details: cfg.mono.link, available: true, status: "", auto: true };
+  if (cfg.ton?.wallet) auto.ton = { name: "Крипта USDT (TON)", short: "USDT TON", note: "Telegram Wallet, Tonkeeper · комісія ~0.03$ · зараховується автоматично", currency: "USDT", details: cfg.ton.wallet, jetton: cfg.ton.jetton, auto: true };
+  if (cfg.tron?.wallet) auto.crypto = { ...crypto, name: "Крипта USDT (TRC20)", short: "USDT TRC20", note: "Binance, Trust Wallet, біржі · комісія мережі ~1–3$ · зараховується автоматично", details: cfg.tron.wallet, auto: true };
   CONFIG.PAYMENTS = {
-    mono: { ...mono, name: "Monobank — будь-яка картка", short: "Картка", note: "Visa / Mastercard, Apple Pay, Google Pay · зараховується автоматично", details: cfg.mono.link, available: true, status: "", auto: true },
+    ...auto,
+    ...(auto.mono ? {} : { mono }),
     ...rest,
+    ...(auto.crypto ? {} : { crypto }),
+    privat: auto.mono ? { ...privat, name: "ПриватБанк (запасний)", note: "Якщо основний спосіб не працює · переказ на карту, підтвердження вручну" } : privat,
   };
 }).catch(() => {});
 
@@ -874,7 +882,7 @@ function openCheckout(opts = {}) {
         </div>
       </div>
       <div class="opt-group"><span>Спосіб оплати</span><div class="pay-methods">${methods}</div></div>
-      <label class="checkbox"><input type="checkbox" id="coAgree" /> <span>Я погоджуюсь з правилами донату (п. 5) та розумію, що видача відбувається через тікет у Discord</span></label>
+      <label class="checkbox"><input type="checkbox" id="coAgree" /> <span>Я погоджуюсь з правилами донату (п. 5). Товар видається автоматично, у разі проблем — тікет у Discord</span></label>
       <div class="m-total"><span>До сплати</span><b>${money(t.total)}</b></div>
       <button class="btn btn-fire btn-block" type="submit">Отримати реквізити</button>
     </form>
@@ -921,7 +929,7 @@ function openCheckout(opts = {}) {
       }
       store.set("ev_user", { ...store.get("ev_user", {}), nick, discord });
       const order = {
-        code: d.code, nick, discord, method, total: d.total, promo: d.promo,
+        code: d.code, nick, discord, method, total: d.total, promo: d.promo, payAmount: d.payAmount,
         giftTo: d.giftTo, giftMessage: d.giftMessage, date: d.createdAt, status: "Очікує оплату",
         items: d.items.map((i) => ({ id: i.id, name: PRODUCTS.find((x) => x.id === i.id)?.name || i.id, label: dayLabel(i.dur), qty: i.qty, unit: i.unit })),
       };
@@ -937,7 +945,7 @@ function openCheckout(opts = {}) {
 
 function orderText(o) {
   const gift = o.giftTo ? `\nПодарунок для: ${o.giftTo}${o.giftMessage ? ` («${o.giftMessage}»)` : ""}` : "";
-  return `Замовлення ${o.code}\nНік: ${o.nick}\nDiscord: ${o.discord}${gift}\nТовари: ${o.items.map((i) => `${i.name}${i.label ? " (" + i.label + ")" : ""} x${i.qty}`).join(", ")}\nСума: ${moneyUah(o.total)}${window.EvilCurrency && window.EvilCurrency.code !== "UAH" ? ` (≈ ${money(o.total)})` : ""}\nОплата: ${CONFIG.PAYMENTS[o.method].name}`;
+  return `Замовлення ${o.code}\nНік: ${o.nick}\nDiscord: ${o.discord}${gift}\nТовари: ${o.items.map((i) => `${i.name}${i.label ? " (" + i.label + ")" : ""} x${i.qty}`).join(", ")}\nСума: ${moneyUah(o.total)}${window.EvilCurrency && window.EvilCurrency.code !== "UAH" ? ` (≈ ${money(o.total)})` : ""}\nОплата: ${CONFIG.PAYMENTS[o.method]?.name || o.method}${o.payAmount ? ` (${o.payAmount} USDT)` : ""}`;
 }
 
 // Посилання на банку з уже заповненою сумою (грн) і кодом у коментарі
@@ -948,15 +956,23 @@ function monoPayUrl(link, o) {
   return u.toString();
 }
 
+// Посилання ton:// — гаманець (Tonkeeper тощо) відкриється з уже заповненими адресою, сумою USDT і коментарем
+function tonPayUrl(m, o) {
+  const micro = Math.round(Number(o.payAmount) * 1e6);
+  return `ton://transfer/${m.details}?jetton=${m.jetton}&amount=${micro}&text=${encodeURIComponent(o.code)}`;
+}
+
 function showPayment(o) {
-  const m = CONFIG.PAYMENTS[o.method];
+  const m = CONFIG.PAYMENTS[o.method] || { name: o.method, details: "" };
   const steps = {
     casebal: [`Зайди на сайт Case Bal та поповни баланс / створи депозит-код на <b>${moneyFor(o.total, o.method)}</b>`, `Передай депозит на акаунт адміністрації (${esc(m.details)})`, "Зроби скріншот підтвердження"],
     mono: m.auto
       ? ["Натисни «Оплатити» — відкриється банка monobank. Підходить будь-яка картка, Apple Pay чи Google Pay", `Сума: <b>${moneyFor(o.total, o.method)}</b>`, `У коментарі до платежу встав код <b>${o.code}</b> — без нього оплата не зарахується автоматично`, "Товар прийде в гру сам протягом 1–2 хвилин після оплати. Статус видно у вкладці «Кабінет»"]
       : [`Переведи <b>${moneyFor(o.total, o.method)}</b> за реквізитами нижче`, `У коментарі вкажи код <b>${o.code}</b>`, "Збережи квитанцію"],
     privat: [`Переведи <b>${moneyFor(o.total, o.method)}</b> на карту нижче`, `У коментарі вкажи код <b>${o.code}</b>`, "Збережи квитанцію"],
-    crypto: [`Відправ еквівалент <b>${moneyFor(o.total, o.method)}</b> у USDT (мережа TRC20)`, "Перевір мережу — інша мережа = втрата коштів", "Збережи хеш транзакції (TxID)"],
+    ton: [`Надішли рівно <b>${o.payAmount} USDT</b> у мережі <b>TON</b> — з Telegram Wallet, Tonkeeper чи іншого гаманця TON`, "Адресу й суму скопіюй вище або натисни «Відкрити в гаманці» — усе заповниться само", `У коментарі (Comment / Memo) встав код <b>${o.code}</b> — без нього оплата не зарахується автоматично`, "Товар прийде в гру сам за 1–2 хвилини після підтвердження переказу. Статус видно у вкладці «Кабінет»"],
+    crypto: m.auto && o.payAmount ? [`Надішли рівно <b>${o.payAmount} USDT</b> у мережі <b>TRC20 (TRON)</b> на адресу вище`, "Сума — саме така, до тисячних: за нею сайт впізнає твій платіж (коментар у TRON не передається)", "Платиш з біржі (Binance тощо)? Вкажи суму так, щоб після комісії біржі на адресу дійшло рівно стільки", "Товар прийде в гру сам за 1–3 хвилини після підтвердження переказу. Статус видно у вкладці «Кабінет»"]
+      : [`Відправ еквівалент <b>${moneyFor(o.total, o.method)}</b> у USDT (мережа TRC20)`, "Перевір мережу — інша мережа = втрата коштів", "Збережи хеш транзакції (TxID)"],
     sbp: [`Переведи еквівалент <b>${moneyFor(o.total, o.method)}</b> у рублях за реквізитами нижче`, `У коментарі вкажи код <b>${o.code}</b>`, "Збережи квитанцію"],
     rucard: [`Переведи еквівалент <b>${moneyFor(o.total, o.method)}</b> у рублях на карту нижче`, `У коментарі вкажи код <b>${o.code}</b>`, "Збережи квитанцію"],
   }[o.method];
@@ -968,10 +984,13 @@ function showPayment(o) {
     <div class="instructions">
       <span class="muted small">Код замовлення</span>
       <div class="copy-row"><code>${o.code}</code><button class="btn btn-ghost btn-sm" data-copy="${o.code}">Копіювати</button></div>
-      ${m.auto ? "" : `<span class="muted small">Реквізити</span>
+      ${o.method === "mono" && m.auto ? "" : `<span class="muted small">${o.method === "ton" ? "Адреса гаманця (мережа TON)" : o.method === "crypto" && m.auto ? "Адреса гаманця (мережа TRC20)" : "Реквізити"}</span>
       <div class="copy-row"><code>${esc(m.details)}</code><button class="btn btn-ghost btn-sm" data-copy="${esc(m.details)}">Копіювати</button></div>`}
+      ${(o.method === "ton" || (o.method === "crypto" && m.auto)) && o.payAmount ? `<span class="muted small">Сума</span>
+      <div class="copy-row"><code>${esc(o.payAmount)} USDT</code><button class="btn btn-ghost btn-sm" data-copy="${esc(o.payAmount)}">Копіювати</button></div>` : ""}
       <ol>${steps.map((s) => `<li>${s}</li>`).join("")}${m.auto ? "" : "<li>Створи тікет «Донат» у Discord, встав код і скрін оплати</li>"}</ol>
-      ${m.auto ? `<a class="btn btn-fire btn-block" href="${esc(monoPayUrl(m.details, o))}" target="_blank" rel="noopener">Оплатити ${moneyFor(o.total, o.method)}</a>` : ""}
+      ${o.method === "mono" && m.auto ? `<a class="btn btn-fire btn-block" href="${esc(monoPayUrl(m.details, o))}" target="_blank" rel="noopener">Оплатити ${moneyFor(o.total, o.method)}</a>` : ""}
+      ${o.method === "ton" && o.payAmount ? `<a class="btn btn-fire btn-block" href="${esc(tonPayUrl(m, o))}">Відкрити в гаманці</a>` : ""}
     </div>
     <div class="m-actions">
       <button class="btn btn-ghost" id="copyOrder">Копіювати для тікету</button>

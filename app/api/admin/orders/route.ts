@@ -4,7 +4,7 @@ import { db } from "@/lib/db"
 import { ensureDeliveryColumns } from "@/lib/db/ensure"
 import { orders } from "@/lib/db/schema"
 import { clientIp, rateLimited } from "@/lib/server-utils"
-import { checkMonoPayments, monoStatus } from "@/lib/mono"
+import { checkPayments, paymentsStatus } from "@/lib/payments"
 
 export const dynamic = "force-dynamic"
 
@@ -23,13 +23,13 @@ export async function GET(req: Request) {
   const denied = guard(req)
   if (denied) return denied
   await ensureDeliveryColumns()
-  await checkMonoPayments()
+  await checkPayments()
   const status = new URL(req.url).searchParams.get("status") ?? "all"
   const base = db.select().from(orders)
   const rows = await (["pending", "paid", "cancelled"].includes(status) ? base.where(eq(orders.status, status)) : base)
     .orderBy(desc(orders.createdAt))
     .limit(200)
-  return json({ orders: rows, mono: await monoStatus() })
+  return json({ orders: rows, payments: await paymentsStatus() })
 }
 
 // PATCH { code, status: "paid" | "cancelled" | "pending" } — підтвердити/скасувати оплату.

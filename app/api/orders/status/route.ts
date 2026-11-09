@@ -3,7 +3,7 @@ import { db } from "@/lib/db"
 import { ensureDeliveryColumns } from "@/lib/db/ensure"
 import { orders } from "@/lib/db/schema"
 import { clientIp, rateLimited } from "@/lib/server-utils"
-import { checkMonoPayments } from "@/lib/mono"
+import { checkPayments } from "@/lib/payments"
 
 export const dynamic = "force-dynamic"
 
@@ -15,7 +15,7 @@ export async function GET(req: Request) {
     .split(",").map((c) => c.trim().toUpperCase()).filter((c) => /^EV-[A-Z0-9]{4,12}$/.test(c)).slice(0, 30)
   if (!codes.length) return Response.json({ orders: {} })
   await ensureDeliveryColumns()
-  await checkMonoPayments()
+  await checkPayments()
   const rows = await db
     .select({ code: orders.code, status: orders.status, delivery: orders.deliveryStatus })
     .from(orders)

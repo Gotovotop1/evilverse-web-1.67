@@ -26,4 +26,5 @@ export const orders = pgTable("orders", {
   deliveryManual: jsonb("delivery_manual").$type<string[]>(),
   // Автоматична оплата (monobank): що і коли надійшло
   paymentLog: jsonb("payment_log").$type<string[]>(),
+  payAmount: text("pay_amount"), // сума в USDT для оплати криптою (за курсом на момент замовлення)
 })

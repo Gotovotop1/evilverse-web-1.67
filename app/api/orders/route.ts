@@ -5,6 +5,8 @@ import { orders, type OrderItem } from "@/lib/db/schema"
 import { ensureDeliveryColumns } from "@/lib/db/ensure"
 import { clientIp, rateLimited, sendDiscordWebhook } from "@/lib/server-utils"
 import { monoConfigured } from "@/lib/mono"
+import { uahToUsdt } from "@/lib/rates"
+import { uniqueTronAmount } from "@/lib/tron"
 
 export const dynamic = "force-dynamic"
 
@@ -68,12 +70,18 @@ export async function POST(req: Request) {
     return json({ error: "db_error" }, 500)
   }
 
+  // Оплата USDT (TON): фіксуємо суму в USDT за курсом на момент замовлення
+  // TRC20 (crypto) — ще й унікальна сума до тисячних: у TRON немає коментаря, платіж впізнаємо за сумою
+  const payAmount = method === "ton" ? await uahToUsdt(total)
+    : method === "crypto" ? await uniqueTronAmount(await uahToUsdt(total))
+    : null
+
   let code = ""
   for (let attempt = 0; attempt < 5; attempt++) {
     code = `EV-${randomBytes(4).toString("hex").slice(0, 6).toUpperCase()}`
     try {
       await db.insert(orders).values({
-        code, nick, discord, method, items, subtotal, discount, total, promo, giftTo, giftMessage,
+        code, nick, discord, method, items, subtotal, discount, total, promo, giftTo, giftMessage, payAmount,
       })
       break
     } catch (error: any) {
@@ -86,10 +94,10 @@ export async function POST(req: Request) {
     { name: "Discord", value: discord, inline: true },
     { name: "Оплата", value: method, inline: true },
     { name: "Товари", value: items.map((i) => `${i.id}${i.dur ? ` (${i.dur})` : ""} ×${i.qty}`).join("\n").slice(0, 1000) },
-    { name: "Сума", value: `${total} грн${promo ? ` (${promo})` : ""}`, inline: true },
+    { name: "Сума", value: `${total} грн${payAmount ? ` = ${payAmount} USDT` : ""}${promo ? ` (${promo})` : ""}`, inline: true },
   ]
   if (giftTo) fields.push({ name: "Подарунок для", value: `${giftTo}${giftMessage ? `\n${giftMessage}` : ""}`, inline: true })
   void sendDiscordWebhook({ allowed_mentions: { parse: [] }, embeds: [{ title: `Нове замовлення ${code}`, color: 0xff6a00, fields }] })
 
-  return json({ code, nick, discord, method, items, subtotal, discount, total, promo, giftTo, giftMessage, createdAt: new Date().toISOString() })
+  return json({ code, nick, discord, method, items, subtotal, discount, total, promo, giftTo, giftMessage, payAmount, createdAt: new Date().toISOString() })
 }

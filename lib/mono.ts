@@ -1,6 +1,7 @@
 import { pool } from "@/lib/db"
 import { ensureDeliveryColumns } from "@/lib/db/ensure"
 import { sendDiscordWebhook } from "@/lib/server-utils"
+import { kvGet, kvSet, takeSlot } from "@/lib/kv"
 
 /*
  * Автоматична оплата через банку monobank.
@@ -40,26 +41,6 @@ export function normalizeComment(text: string) {
 export function commentHasCode(comment: string, code: string) {
   const suffix = code.replace(/^EV-/, "")
   return normalizeComment(comment).includes(suffix)
-}
-
-async function kvGet(key: string) {
-  const r = await pool.query("SELECT value FROM app_kv WHERE key = $1", [key])
-  return (r.rows[0]?.value as string | undefined) ?? null
-}
-async function kvSet(key: string, value: string) {
-  await pool.query("INSERT INTO app_kv (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2", [key, value])
-}
-
-/** Не частіше ніж раз на хвилину на всі копії сайту одразу (атомарно в базі). */
-async function takeSlot() {
-  const now = Date.now()
-  const r = await pool.query(
-    `INSERT INTO app_kv (key, value) VALUES ('mono_last_call', $1)
-     ON CONFLICT (key) DO UPDATE SET value = $1 WHERE app_kv.value::bigint <= $2
-     RETURNING key`,
-    [String(now), now - MIN_INTERVAL_MS],
-  )
-  return r.rowCount === 1
 }
 
 async function monoGet(path: string) {
@@ -112,7 +93,7 @@ async function run() {
      WHERE method = 'mono' AND status = 'pending' AND is_demo = false AND created_at > now() - interval '7 days'`,
   )).rows as PendingOrder[]
   if (!pending.length) return
-  if (!(await takeSlot())) return
+  if (!(await takeSlot("mono_last_call", MIN_INTERVAL_MS))) return
 
   const id = await jarId()
   if (!id) return
