@@ -3,3 +3,10 @@ pmOnFail: ignore
 minimumReleaseAgeExclude:
   - '@next/*'
   - next
+
+# Безпечні версії вкладених залежностей Next.js (закривають відомі вразливості, поки Next.js не оновить їх сам)
+overrides:
+  nanoid@<3.3.18: ^3.3.18
+  browserslist@<4.28.7: ^4.28.7
+  baseline-browser-mapping@<2.11.0: ^2.11.0
+  source-map-js@<1.2.2: ^1.2.2

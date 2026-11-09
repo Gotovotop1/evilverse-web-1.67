@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto"
 import { CATALOG, ENABLED_PAYMENTS, NICK_RE, PROMO, THIRTY_DAY_RATE } from "@/lib/catalog"
 import { db } from "@/lib/db"
 import { orders, type OrderItem } from "@/lib/db/schema"
+import { ensureDeliveryColumns } from "@/lib/db/ensure"
 import { clientIp, rateLimited, sendDiscordWebhook } from "@/lib/server-utils"
 
 export const dynamic = "force-dynamic"
@@ -34,6 +35,7 @@ export async function POST(req: Request) {
 
   const items: OrderItem[] = []
   let rankCount = 0
+  let subCount = 0
   for (const raw of body.items) {
     const product = CATALOG[String(raw?.id)]
     const qty = Number(raw?.qty)
@@ -45,14 +47,25 @@ export async function POST(req: Request) {
       if (qty !== 1) return json({ error: "bad_items" }, 400)
       dur = raw?.dur === "30" ? "30" : "forever"
       if (dur === "30") unit = Math.round(product.price * THIRTY_DAY_RATE)
+    } else if (product.cat === "sub") {
+      subCount++
+      if (qty !== 1) return json({ error: "bad_items" }, 400)
+      dur = "30"
     }
     items.push({ id: String(raw.id), dur, qty, unit })
   }
   if (rankCount > 1) return json({ error: "one_rank_only" }, 400)
+  if (subCount > 1) return json({ error: "one_sub_only" }, 400)
 
   const subtotal = items.reduce((sum, i) => sum + i.unit * i.qty, 0)
   const discount = promo ? Math.round((subtotal * PROMO[promo]) / 100) : 0
   const total = subtotal - discount
+
+  try {
+    await ensureDeliveryColumns()
+  } catch {
+    return json({ error: "db_error" }, 500)
+  }
 
   let code = ""
   for (let attempt = 0; attempt < 5; attempt++) {

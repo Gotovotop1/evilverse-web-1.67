@@ -19,4 +19,9 @@ export const orders = pgTable("orders", {
   isDemo: boolean("is_demo").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   paidAt: timestamp("paid_at", { withTimezone: true }),
+  // Автовидача на сервер (плагін HellPrime забирає оплачені замовлення сам)
+  deliveryStatus: text("delivery_status"), // null — ще не видано; delivered | manual | failed
+  deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+  deliveryLog: jsonb("delivery_log").$type<string[]>(),
+  deliveryManual: jsonb("delivery_manual").$type<string[]>(),
 })

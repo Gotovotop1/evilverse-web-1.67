@@ -506,3 +506,11 @@ img.logo-mark { width: 36px; height: 36px; object-fit: cover; image-rendering: p
 .loot--xp .roll-cell span { font-weight: 700; }
 .loot--xp .btn-ghost { border-color: rgba(93, 242, 76, .45); color: #b9ffae; }
 .loot--xp .btn-ghost:hover:not(:disabled) { background: rgba(93, 242, 76, .12); }
+
+/* ---------- Фішки (донат-валюта): червоні, зі значком монети як у грі ---------- */
+.fishka { color: #ff2a2a; font-weight: 700; }
+.fishka-ico {
+  display: inline-block; width: 1em; height: 1em; margin-left: .25em; vertical-align: -.12em;
+  background: url("/shop/fishka.svg") center / contain no-repeat; image-rendering: pixelated;
+}
+.item.item--chips .item-name, .item.item--chips .item-sub { color: #ff2a2a; }

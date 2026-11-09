@@ -17,7 +17,7 @@ const CONFIG = {
     sbp: { name: "СБП", short: "СБП", note: "Переказ за номером телефону", currency: "RUB", details: "—", available: false, status: "Тимчасово недоступно" },
     rucard: { name: "Картка РФ", short: "Картка РФ", note: "Переказ на карту російського банку", currency: "RUB", details: "—", available: false, status: "Тимчасово недоступно" },
   },
-  TOKEN_RATE: 5, // 1 грн = 5 токенів (для оплати привілеїв токенами)
+  TOKEN_RATE: 5, // 1 грн = 5 фішок (для оплати привілеїв фішками)
 };
 
 /* =========================================================
@@ -48,6 +48,21 @@ const TOKEN_PACKS = [
   { id: "t600", amount: 600, bonus: 90, price: 99, popular: true },
   { id: "t1200", amount: 1200, bonus: 240, price: 189 },
   { id: "t3000", amount: 3000, bonus: 900, price: 449, hot: true },
+];
+
+// Підписки Prime (плагін HellPrime). Ціни на сайті — у гривнях; у грі ті самі підписки продаються за фішки (/prime).
+const SUBS = [
+  { id: "prime", name: "Prime", color: "#ffa31a", price: 55, ingame: 449, icon: "P",
+    desc: "Зручності та косметика на 30 днів. Жодних переваг у бою.",
+    perks: ["5 точок дому", "+1 слот аукціону", "/hat — блок на голову", "Кольоровий нік /nick", "Аура з частинок (2 стилі)",
+      "Титули (2) у чаті та TAB", "Оголошення про вхід", "Пози /lay та /bellyflop", "Своя погода /pweather",
+      "Ефект убивства (2 види)", "Бан після смерті коротший на 25%"] },
+  { id: "prime_plus", name: "Prime+", color: "#ff3b1a", price: 77, ingame: 599, icon: "P+", hot: true,
+    desc: "Усе з Prime, але більше та яскравіше. 30 днів.",
+    perks: ["Усе з Prime", "8 точок дому", "+5 слотів аукціону", "/craft — верстак у кишені", "Аура Пекла (5 стилів)",
+      "Титули Prime+ (5)", "Явлення Prime+ — вхід зі звуком", "Вхід на повний сервер", "Пози /spin та /crawl",
+      "Свій час доби /ptime", "Автоприйняття телепорту /tpauto", "Ефекти убивства (6 видів)", "Слід за стрілами та тризубом",
+      "Бан після смерті коротший на 50%"] },
 ];
 
 const CASES = [
@@ -175,10 +190,11 @@ const EXTRAS = [
 ];
 
 const PRODUCTS = [
+  ...SUBS.map((s) => ({ ...s, cat: "sub" })),
   ...RANKS.map((r, i) => ({ ...r, cat: "rank", tier: i + 1 })),
   ...TOKEN_PACKS.map((t) => ({
-    ...t, cat: "tokens", name: `${t.amount} токенів`, color: "#ffb347", icon: "T",
-    desc: t.bonus ? `+${t.bonus} бонусних токенів у подарунок` : "Донат-валюта сервера",
+    ...t, cat: "tokens", name: `${t.amount} фішок`, color: "#ff2424", icon: "T",
+    desc: t.bonus ? `+${t.bonus} бонусних фішок у подарунок` : "Донат-валюта сервера",
   })),
   ...CASES.map((c) => ({ ...c, cat: "case" })),
   ...EXTRAS.map((e) => ({ ...e, cat: "extra" })),
@@ -242,7 +258,7 @@ const ROLES = {
     desc: "Знімає відео, стрімить та розвиває сервер у соцмережах.",
     reqs: ["Від 300 підписників (YouTube / TikTok / Twitch)", "Від 2 роликів/стрімів на місяць про сервер", "Якісний звук і картинка", "Посилання на сервер в описі"],
     duties: ["Контент про EVILVERSE", "Анонси івентів", "Посилання на сервер у відео"],
-    perksText: "Отримуєш: привілей Демон на час співпраці, префікс [Media], токени за перегляди.",
+    perksText: "Отримуєш: привілей Демон на час співпраці, префікс [Media], фішки за перегляди.",
     fields: [
       { id: "platform", label: "Основна платформа", type: "select", options: ["YouTube", "TikTok", "Twitch", "YouTube Shorts", "Інше"] },
       { id: "channel", label: "Посилання на канал", type: "url", placeholder: "https://" },
@@ -336,11 +352,11 @@ const FAQ = [
   ["Чи потрібна ліцензія?", "Ні, можна грати з будь-якого лаунчера (TLauncher, Legacy та інші)."],
   ["Як швидко видається донат?", "Після оплати створи тікет у Discord з кодом замовлення. Зазвичай видача до 30 хвилин, максимум 24 години."],
   ["Можна доплатити і підвищити привілей?", "Так! Платиш лише різницю між привілеями. Напиши в тікет — адмін порахує."],
-  ["Що таке токени?", "Донат-валюта сервера. За токени можна купити кейси, привілеї (1 грн = 5 токенів), предмети на /shop та послуги."],
+  ["Що таке фішки?", "Донат-валюта сервера. За фішки можна купити кейси, привілеї (1 грн = 5 фішок), предмети на /shop та послуги."],
   ["Що таке оплата депом Case Bal?", "Ти поповнюєш наш баланс на кейс-сайті Case Bal (депозит-кодом або переказом балансу) на суму замовлення та скидаєш скрін у тікет."],
   ["Мене забанили несправедливо. Що робити?", "Створи тікет «Оскарження» у Discord. Додай нік, дату та докази. Розгляд до 48 годин."],
   ["Скільки розглядають заявки в адміністрацію?", "До 7 днів. Відповідь прийде в особисті в Discord, тож не закривай ЛС від учасників сервера."],
-  ["Знайшов баг — що отримаю?", "Залежно від серйозності — від 100 до 1000 токенів. Пиши в канал #баги."],
+  ["Знайшов баг — що отримаю?", "Залежно від серйозності — від 100 до 1000 фішок. Пиши в канал #баги."],
 ];
 
 /* =========================================================
@@ -527,14 +543,17 @@ function iconImg(id) { return `<img src="/shop/${esc(id)}.webp" alt="" width="64
 function renderShop() {
   const list = PRODUCTS.filter((p) => currentCat === "all" || p.cat === currentCat);
   $("#shopGrid").innerHTML = list.map((p) => {
-    const tier = p.cat === "rank" ? `Рівень ${p.tier} з ${RANKS.length}` : { tokens: "Токени", case: "Кейс", extra: "Послуга" }[p.cat];
+    const tier = p.cat === "rank" ? `Рівень ${p.tier} з ${RANKS.length}` : { sub: "Підписка · 30 днів", tokens: "Фішки", case: "Кейс", extra: "Послуга" }[p.cat];
     const ribbon = p.hot ? `<span class="ribbon">ХІТ</span>` : p.popular ? `<span class="ribbon">ТОП</span>` : "";
-    const sub = p.cat === "rank" ? `або ${tokenPrice(p)} токенів · назавжди` : p.cat === "tokens" && p.bonus ? `Разом: ${p.amount + p.bonus} токенів` : "";
-    return `<button class="item" style="${itemStyle(p)}" data-id="${p.id}" aria-label="${esc(tr(p.name))}, ${money(p.price)}">
+    const coin = `<i class="fishka-ico" aria-hidden="true"></i>`;
+    const sub = p.cat === "rank" ? `або ${tokenPrice(p)} фішок · назавжди${coin}`
+      : p.cat === "sub" ? `або ${p.ingame} фішок у грі (/prime)${coin}`
+      : p.cat === "tokens" && p.bonus ? `Разом: ${p.amount + p.bonus} фішок${coin}` : "";
+    return `<button class="item${p.cat === "tokens" ? " item--chips" : ""}" style="${itemStyle(p)}" data-id="${p.id}" aria-label="${esc(tr(p.name))}, ${money(p.price)}">
       ${ribbon}
       <span class="item-tier">${tier}</span>
       <span class="item-icon">${iconImg(p.id)}</span>
-      <span class="item-name">${esc(p.name)}</span>
+      <span class="item-name">${esc(p.name)}${p.cat === "tokens" ? coin : ""}</span>
       <span class="item-desc">${esc(p.desc)}</span>
       <span class="item-price">${money(p.price)}</span>
       ${sub ? `<span class="item-sub">${sub}</span>` : ""}
@@ -599,6 +618,12 @@ function openProduct(id) {
       <label class="opt"><input type="radio" name="dur" value="30" /><b>30 днів</b><small>${money(Math.round(p.price * 0.4))}</small></label>
       <label class="opt"><input type="radio" name="dur" value="forever" checked /><b>Назавжди</b><small>${money(p.price)} · вигідно</small></label>
     </div></div>`;
+  } else if (p.cat === "sub") {
+    options = `<div class="opt-group"><span>Термін</span><div class="opts">
+      <label class="opt"><input type="radio" name="dur" value="30" checked /><b>30 днів</b><small>${money(p.price)}</small></label>
+    </div></div>
+    <p class="muted small">Видається автоматично, щойно оплату підтверджено. Якщо підписка вже є — час додається.
+      Також можна купити в грі за <span class="fishka">${p.ingame}<i class="fishka-ico" aria-hidden="true"></i></span> фішок: /prime</p>`;
   } else {
     options = `<div class="opt-group"><span>Кількість</span><div class="qty">
       <button type="button" data-q="-1" aria-label="Менше">−</button><span id="qtyVal">1</span><button type="button" data-q="1" aria-label="Більше">+</button>
@@ -608,7 +633,7 @@ function openProduct(id) {
   openModal(`
     <div class="m-head" style="${itemStyle(p)}">
       <span class="item-icon">${iconImg(p.id)}</span>
-      <div><span class="item-tier">${p.cat === "rank" ? `Привілей · рівень ${p.tier}` : "Товар"}</span><h2 id="modalTitle" style="color:${p.color}">${esc(p.name)}</h2></div>
+      <div><span class="item-tier">${p.cat === "rank" ? `Привілей · рівень ${p.tier}` : p.cat === "sub" ? "Підписка · 30 днів" : "Товар"}</span><h2 id="modalTitle" style="color:${p.color}">${esc(p.name)}</h2></div>
     </div>
     <p class="muted">${esc(p.desc)}</p>
     ${perks}
@@ -628,6 +653,7 @@ function openProduct(id) {
       const dur = $('input[name="dur"]:checked').value;
       return { price: dur === "30" ? Math.round(p.price * 0.4) : p.price, label: dur === "30" ? "30 днів" : "Назавжди", qty: 1 };
     }
+    if (p.cat === "sub") return { price: p.price, label: "30 днів", qty: 1 };
     return { price: p.price * qty, label: "", qty };
   };
   const update = () => { $("#mTotal").textContent = money(calc().price); };
@@ -740,6 +766,7 @@ let promoPct = store.get("ev_promo_pct", 0);
 function saveCart() { store.set("ev_cart", cart); store.set("ev_promo", promo); store.set("ev_promo_pct", promoPct); renderCart(); }
 function addToCart(item) {
   if (item.cat === "rank") cart = cart.filter((c) => c.cat !== "rank");
+  if (item.cat === "sub") cart = cart.filter((c) => c.cat !== "sub");
   const key = `${item.id}|${item.label}`;
   const ex = cart.find((c) => `${c.id}|${c.label}` === key);
   if (ex && item.cat !== "rank") ex.qty = Math.min(20, ex.qty + item.qty);
@@ -807,6 +834,7 @@ const ORDER_ERRORS = {
   bad_discord: "Вкажи свій Discord",
   bad_method: "Обери доступний спосіб оплати",
   bad_promo: "Такого промокоду не існує",
+  one_sub_only: "Одна підписка Prime на замовлення",
   too_many_requests: "Забагато спроб. Спробуй трохи пізніше",
 };
 const dayLabel = (dur) => (dur === "30" ? "30 днів" : dur === "forever" ? "Назавжди" : "");
@@ -871,7 +899,7 @@ function openCheckout(opts = {}) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           nick, discord, method, promo,
-          items: cart.map((c) => ({ id: c.id, qty: c.qty, dur: c.cat === "rank" ? (c.label === "30 днів" ? "30" : "forever") : undefined })),
+          items: cart.map((c) => ({ id: c.id, qty: c.qty, dur: c.cat === "rank" ? (c.label === "30 днів" ? "30" : "forever") : c.cat === "sub" ? "30" : undefined })),
           gift: giftOn ? { to: giftTo, message: $("#giftMsg").value.trim() } : null,
         }),
       });
@@ -1189,7 +1217,36 @@ function renderFaq() {
 const LOCALES = { uk: "uk-UA", ru: "ru-RU", en: "en-GB" };
 const currentLang = () => window.EvilI18n?.language || "uk";
 
-function renderProfile() {
+const ORDER_STATUS_TEXT = (st) => st.status === "cancelled" ? "Скасовано"
+  : st.status !== "paid" ? "Очікує оплату"
+  : st.delivery === "delivered" || st.delivery === "legacy" ? "Оплачено · видано в грі"
+  : st.delivery === "manual" ? "Оплачено · частину видасть адміністрація"
+  : st.delivery === "failed" ? "Оплачено · видача уточнюється"
+  : "Оплачено · видача в грі (зайди на сервер)";
+
+// Справжній статус замовлень із сайту (оплачено / видано), не лише локальна копія.
+let statusRefreshAt = 0;
+async function refreshOrderStatuses() {
+  const orders = store.get("ev_orders", []);
+  if (!orders.length || Date.now() - statusRefreshAt < 15000) return;
+  statusRefreshAt = Date.now();
+  try {
+    const res = await fetch("/api/orders/status?codes=" + encodeURIComponent(orders.slice(0, 30).map((o) => o.code).join(",")), { cache: "no-store" });
+    if (!res.ok) return;
+    const { orders: statuses } = await res.json();
+    let changed = false;
+    for (const o of orders) {
+      const st = statuses?.[o.code];
+      if (!st) continue;
+      const text = ORDER_STATUS_TEXT(st);
+      if (o.status !== text) { o.status = text; changed = true; }
+    }
+    if (changed) { store.set("ev_orders", orders); renderProfile(true); }
+  } catch { /* офлайн — покажемо збережене */ }
+}
+
+function renderProfile(fromRefresh = false) {
+  if (!fromRefresh) void refreshOrderStatuses();
   const orders = store.get("ev_orders", []);
   const apps = store.get("ev_apps", []);
   const fmt = (iso) => new Date(iso).toLocaleString(LOCALES[currentLang()] || "uk-UA");

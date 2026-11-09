@@ -138,8 +138,8 @@ window.EV_I18N_EXTRA = (() => {
   const PATTERNS = [
     [/^(\d+) × (.+)$/, (m, lang, tr) => `${m[1]} × ${tr(m[2])}`],
     [/^(\d[\d ]*) досвіду$/, (m, lang) => (isRu(lang) ? `${m[1]} опыта` : `${m[1]} XP`)],
-    [/^(\d+) токенів$/, (m, lang) => (isRu(lang) ? `${m[1]} токенов` : `${m[1]} tokens`)],
-    [/^(\d+)–(\d+) токенів$/, (m, lang) => (isRu(lang) ? `${m[1]}–${m[2]} токенов` : `${m[1]}–${m[2]} tokens`)],
+    [/^(\d+) фішок$/, (m, lang) => (isRu(lang) ? `${m[1]} фишек` : `${m[1]} chips`)],
+    [/^(\d+)–(\d+) фішок$/, (m, lang) => (isRu(lang) ? `${m[1]}–${m[2]} фишек` : `${m[1]}–${m[2]} chips`)],
     [/^Мут (\d+(?:–\d+)?) (год|хв)$/, (m, lang) => {
       const unit = m[2] === "год" ? (isRu(lang) ? "ч" : "h") : (isRu(lang) ? "мин" : "min");
       return `${isRu(lang) ? "Мут" : "Mute"} ${m[1]} ${unit}`;

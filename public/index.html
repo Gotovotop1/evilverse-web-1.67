@@ -7,7 +7,7 @@
   <script>document.documentElement.classList.add('locale-pending');(function(){var supported=['uk','ru','en'],lang=null;try{var saved=localStorage.getItem('evilverse-language');if(supported.includes(saved))lang=saved}catch(e){}if(!lang){var choices=navigator.languages||[navigator.language];for(var i=0;i<choices.length;i++){var code=choices[i].toLowerCase().split('-')[0];if(supported.includes(code)){lang=code;break}}}document.documentElement.lang=lang||'uk'})()</script>
   <meta name="theme-color" content="#0a0404" />
   <title>EVILVERSE — пекельний Minecraft сервер</title>
-  <meta name="description" content="EVILVERSE — Minecraft сервер з пекельною атмосферою. IP: evilverse.tkmc.net. Привілеї, токени, кейси, івенти та набір у команду: Moder, Helper, Media, Coder." />
+  <meta name="description" content="EVILVERSE — Minecraft сервер з пекельною атмосферою. IP: evilverse.tkmc.net. Привілеї, фішки, кейси, івенти та набір у команду: Moder, Helper, Media, Coder." />
   <link rel="icon" href="/icon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -101,8 +101,8 @@
       <div class="container section">
         <h2 class="section-title">Чому EVILVERSE</h2>
         <div class="features">
-          <article class="feature reveal"><div class="feature-icon">01</div><h3>Пекельні івенти</h3><p>Щосуботи — боси, PvP-турніри, полювання на скарби з призами у токенах.</p></article>
-          <article class="feature reveal"><div class="feature-icon">02</div><h3>Власна економіка</h3><p>Аукціон, магазини гравців, токени та кейси з рідкісними предметами.</p></article>
+          <article class="feature reveal"><div class="feature-icon">01</div><h3>Пекельні івенти</h3><p>Щосуботи — боси, PvP-турніри, полювання на скарби з призами у фішках.</p></article>
+          <article class="feature reveal"><div class="feature-icon">02</div><h3>Власна економіка</h3><p>Аукціон, магазини гравців, фішки та кейси з рідкісними предметами.</p></article>
           <article class="feature reveal"><div class="feature-icon">03</div><h3>Клани та війни</h3><p>Створюй клан, захоплюй території та піднімайся у топ.</p></article>
           <article class="feature reveal"><div class="feature-icon">04</div><h3>Чесна адміністрація</h3><p>Без адмін-абузу. Скарги розглядаються у Discord протягом доби.</p></article>
           <article class="feature reveal"><div class="feature-icon">05</div><h3>Анти-чит</h3><p>Захист від читів, x-ray та ботів. Грай чесно — і ми граємо чесно.</p></article>
@@ -115,7 +115,7 @@
           <div>
             <p class="eyebrow">Наступний івент</p>
             <h2 class="event-title">Битва у Безодні</h2>
-            <p class="muted">Кожної суботи о 18:00 (Київ). Переможець отримує 500 токенів і кейс Привілегій.</p>
+            <p class="muted">Кожної суботи о 18:00 (Київ). Переможець отримує 500 фішок і кейс Привілегій.</p>
           </div>
           <div class="countdown" id="countdown" aria-live="polite">
             <div><span id="cdD">00</span><small>днів</small></div>
@@ -142,7 +142,7 @@
       <div class="container section">
         <h2 class="section-title">Новини</h2>
         <div class="news">
-          <article class="news-item reveal"><time>Сезон 1</time><h3>Відкриття EVILVERSE</h3><p>Сервер запущено! Перші 50 гравців отримують 50 токенів — пиши в Discord.</p></article>
+          <article class="news-item reveal"><time>Сезон 1</time><h3>Відкриття EVILVERSE</h3><p>Сервер запущено! Перші 50 гравців отримують 50 фішок — пиши в Discord.</p></article>
           <article class="news-item reveal"><time>Акція</time><h3>Промокод EVIL10</h3><p>Знижка 10% на все в магазині. Вводь промокод у кошику.</p></article>
           <article class="news-item reveal"><time>Набір</time><h3>Шукаємо команду</h3><p>Відкрито набір на Moder, Helper, Media та Coder. Подавай заявку на сайті.</p></article>
         </div>
@@ -168,8 +168,9 @@
 
         <div class="shop-filters" role="tablist" aria-label="Категорії магазину">
           <button class="chip active" data-cat="all" role="tab" aria-selected="true">Все</button>
+          <button class="chip" data-cat="sub" role="tab" aria-selected="false">Prime</button>
           <button class="chip" data-cat="rank" role="tab" aria-selected="false">Привілеї</button>
-          <button class="chip" data-cat="tokens" role="tab" aria-selected="false">Токени</button>
+          <button class="chip" data-cat="tokens" role="tab" aria-selected="false">Фішки</button>
           <button class="chip" data-cat="case" role="tab" aria-selected="false">Кейси</button>
           <button class="chip" data-cat="extra" role="tab" aria-selected="false">Послуги</button>
         </div>

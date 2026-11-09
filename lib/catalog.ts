@@ -1,7 +1,10 @@
 // Authoritative prices (UAH). Display data lives in public/index.js — keep ids and prices in sync.
-export type Category = "rank" | "tokens" | "case" | "extra"
+export type Category = "sub" | "rank" | "tokens" | "case" | "extra"
 
 export const CATALOG: Record<string, { cat: Category; price: number }> = {
+  // Підписки HellPrime (30 днів)
+  prime: { cat: "sub", price: 55 },
+  prime_plus: { cat: "sub", price: 77 },
   bis: { cat: "rank", price: 39 },
   prizrak: { cat: "rank", price: 79 },
   cerber: { cat: "rank", price: 129 },
