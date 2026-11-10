@@ -36,3 +36,34 @@ export async function uahToUsdt(uah: number) {
   const usdt = Math.ceil((uah / (await uahPerUsd())) * 100) / 100
   return Math.max(usdt, 0.1).toFixed(2)
 }
+
+// ── Рублі (для DonatePay) ──────────────────────────────────────────────
+const FALLBACK_RUB_PER_UAH = 2.0
+
+/** Скільки рублів коштує 1 гривня. Джерело — open.er-api.com, кеш у базі на 6 годин. */
+export async function rubPerUah(): Promise<number> {
+  const cached = await kvGet("rub_per_uah").catch(() => null)
+  const [at, value] = (cached ?? "").split(" ").map(Number)
+  if (value > 0 && Date.now() - at < TTL_MS) return value
+  try {
+    const res = await fetch("https://open.er-api.com/v6/latest/UAH", { cache: "no-store", signal: AbortSignal.timeout(5000) })
+    const rate = Number((await res.json())?.rates?.RUB)
+    if (rate > 0.5 && rate < 10) {
+      await kvSet("rub_per_uah", `${Date.now()} ${rate}`).catch(() => {})
+      return rate
+    }
+  } catch {}
+  return value > 0 ? value : FALLBACK_RUB_PER_UAH
+}
+
+/** Ціна в рублях (цілі, вгору). RUB_MARKUP_PERCENT у Vercel — націнка, щоб покрити комісію DonatePay (за замовчуванням 0). */
+export async function uahToRub(uah: number) {
+  const markup = 1 + Math.max(0, Number(process.env.RUB_MARKUP_PERCENT ?? 0) || 0) / 100
+  return Math.max(10, Math.ceil(uah * (await rubPerUah()) * markup))
+}
+
+/** Ціна в зірках Telegram. STARS_USD — скільки доларів ти отримуєш за 1 зірку при виведенні (за замовчуванням 0.013). */
+export async function uahToStars(uah: number) {
+  const perStar = Number(process.env.STARS_USD ?? 0.013) || 0.013
+  return Math.max(1, Math.ceil(uah / (await uahPerUsd()) / perStar))
+}

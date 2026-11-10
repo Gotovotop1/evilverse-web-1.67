@@ -49,6 +49,9 @@ export function ensureDeliveryColumns() {
         created_at timestamptz NOT NULL DEFAULT now()
       );
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS pay_amount text;
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS pay_link text;
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS prefix_status text;
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS prefix_note text;
       CREATE TABLE IF NOT EXISTS crypto_payments (
         id text PRIMARY KEY,
         network text NOT NULL,

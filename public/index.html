@@ -7,7 +7,7 @@
   <script>document.documentElement.classList.add('locale-pending');(function(){var supported=['uk','ru','en'],lang=null;try{var saved=localStorage.getItem('evilverse-language');if(supported.includes(saved))lang=saved}catch(e){}if(!lang){var choices=navigator.languages||[navigator.language];for(var i=0;i<choices.length;i++){var code=choices[i].toLowerCase().split('-')[0];if(supported.includes(code)){lang=code;break}}}document.documentElement.lang=lang||'uk'})()</script>
   <meta name="theme-color" content="#0a0404" />
   <title>EVILVERSE — пекельний Minecraft сервер</title>
-  <meta name="description" content="EVILVERSE — Minecraft сервер з пекельною атмосферою. IP: evilverse.tkmc.net. Привілеї, фішки, кейси, івенти та набір у команду: Moder, Helper, Media, Coder." />
+  <meta name="description" content="EVILVERSE — Minecraft сервер з пекельною атмосферою. IP: evilverse.tkmc.net. Підписки Prime, фішки, кейси, івенти та набір у команду: Moder, Helper, Media, Coder." />
   <link rel="icon" href="/icon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -115,7 +115,7 @@
           <div>
             <p class="eyebrow">Наступний івент</p>
             <h2 class="event-title">Битва у Безодні</h2>
-            <p class="muted">Кожної суботи о 18:00 (Київ). Переможець отримує 500 фішок і кейс Привілегій.</p>
+            <p class="muted">Кожної суботи о 18:00 (Київ). Переможець отримує 500 фішок і кейс Підписок.</p>
           </div>
           <div class="countdown" id="countdown" aria-live="polite">
             <div><span id="cdD">00</span><small>днів</small></div>
@@ -163,13 +163,12 @@
         <div class="page-head">
           <p class="eyebrow">Донат магазин</p>
           <h1 class="page-title">Магазин EVILVERSE</h1>
-          <p class="muted">Натисни на товар, щоб переглянути деталі. Видача — після підтвердження оплати (зазвичай до 30 хвилин).</p>
+          <p class="muted">Натисни на товар, щоб переглянути деталі. Видача — автоматична, зазвичай за 1–2 хвилини після оплати.</p>
         </div>
 
         <div class="shop-filters" role="tablist" aria-label="Категорії магазину">
           <button class="chip active" data-cat="all" role="tab" aria-selected="true">Все</button>
-          <button class="chip" data-cat="sub" role="tab" aria-selected="false">Prime</button>
-          <button class="chip" data-cat="rank" role="tab" aria-selected="false">Привілеї</button>
+          <button class="chip" data-cat="sub" role="tab" aria-selected="false">Підписки</button>
           <button class="chip" data-cat="tokens" role="tab" aria-selected="false">Фішки</button>
           <button class="chip" data-cat="case" role="tab" aria-selected="false">Кейси</button>
           <button class="chip" data-cat="extra" role="tab" aria-selected="false">Послуги</button>
@@ -177,14 +176,14 @@
 
         <div class="shop-grid" id="shopGrid"></div>
 
-        <h2 class="section-title mt">Порівняння привілеїв</h2>
+        <h2 class="section-title mt">Порівняння підписок</h2>
         <div class="table-wrap">
           <table class="compare" id="compareTable"></table>
         </div>
 
         <div class="info-grid">
-          <div class="info-card"><h3>Як проходить оплата</h3><ol><li>Додай товари в кошик</li><li>Вкажи нік і обери спосіб оплати</li><li>Оплати за інструкцією та збережи код замовлення</li><li>Створи тікет у Discord з кодом — отримаєш товар</li></ol></div>
-          <div class="info-card"><h3>Гарантії</h3><ul><li>Привілеї «Назавжди» не зникають між сезонами</li><li>Можна доплатити різницю і підвищити привілей</li><li>Якщо товар не видано за 24 год — повернемо кошти</li></ul></div>
+          <div class="info-card"><h3>Як проходить оплата</h3><ol><li>Додай товари в кошик</li><li>Вкажи нік і обери спосіб оплати</li><li>Оплати за інструкцією та збережи код замовлення</li><li>Товар прийде в гру сам — статус видно у «Кабінеті»</li></ol></div>
+          <div class="info-card"><h3>Гарантії</h3><ul><li>Продовження підписки додає час — нічого не згорає</li><li>На вищу підписку — з доплатою лише різниці (/prime)</li><li>Якщо товар не видано за 24 год — повернемо кошти</li></ul></div>
         </div>
       </div>
     </section>

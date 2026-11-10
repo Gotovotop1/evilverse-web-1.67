@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm"
+import { and, desc, eq } from "drizzle-orm"
 import { bearerMatches } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { ensureDeliveryColumns } from "@/lib/db/ensure"
@@ -26,7 +26,9 @@ export async function GET(req: Request) {
   await checkPayments()
   const status = new URL(req.url).searchParams.get("status") ?? "all"
   const base = db.select().from(orders)
-  const rows = await (["pending", "paid", "cancelled"].includes(status) ? base.where(eq(orders.status, status)) : base)
+  const filtered = status === "prefix" ? base.where(eq(orders.prefixStatus, "pending"))
+    : ["pending", "paid", "cancelled"].includes(status) ? base.where(eq(orders.status, status)) : base
+  const rows = await filtered
     .orderBy(desc(orders.createdAt))
     .limit(200)
   return json({ orders: rows, payments: await paymentsStatus() })
@@ -42,6 +44,24 @@ export async function PATCH(req: Request) {
 
   const body = await req.json().catch(() => null)
   const code = String(body?.code ?? "")
+  // { code, prefix: "approve" | "reject", note? } — решение по личному префиксу
+  if (body?.prefix === "approve" || body?.prefix === "reject") {
+    const note = body?.note ? String(body.note).slice(0, 200) : null
+    const updated = await db
+      .update(orders)
+      .set({ prefixStatus: body.prefix === "approve" ? "approved" : "rejected", prefixNote: note })
+      .where(and(eq(orders.code, code), eq(orders.prefixStatus, "pending")))
+      .returning({ code: orders.code, prefixStatus: orders.prefixStatus, items: orders.items, status: orders.status, method: orders.method })
+    if (!updated.length) return json({ error: "not_pending" }, 404)
+    const o = updated[0]
+    // бесплатная заявка, в которой был только префикс, после отказа — закрыта; иначе остальные товары выдаются как обычно
+    if (o.prefixStatus === "rejected" && o.items.every((i) => i.id === "prefix")) {
+      await db.update(orders).set({ deliveryStatus: "manual", deliveryLog: [`префікс відхилено${note ? `: ${note}` : ""}`], deliveredAt: new Date() })
+        .where(eq(orders.code, code))
+    }
+    return json({ code: o.code, prefixStatus: o.prefixStatus })
+  }
+
   if (body?.redeliver === true) {
     const updated = await db
       .update(orders)

@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull } from "drizzle-orm"
+import { and, asc, eq, isNull, ne, or } from "drizzle-orm"
 import { bearerMatches } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { ensureDeliveryColumns } from "@/lib/db/ensure"
@@ -32,16 +32,21 @@ export async function GET(req: Request) {
   // Сервер опитує сайт кожні ~15 с — заодно перевіряємо автоматичні оплати (monobank, USDT TON)
   await checkPayments()
   const rows = await db
-    .select({ code: orders.code, nick: orders.nick, giftTo: orders.giftTo, items: orders.items })
+    .select({ code: orders.code, nick: orders.nick, giftTo: orders.giftTo, items: orders.items, prefixStatus: orders.prefixStatus })
     .from(orders)
-    .where(and(eq(orders.status, "paid"), isNull(orders.deliveryStatus), eq(orders.isDemo, false)))
+    // заказ с личным префиксом ждёт решения администратора (prefix_status = pending)
+    .where(and(eq(orders.status, "paid"), isNull(orders.deliveryStatus), eq(orders.isDemo, false),
+      or(isNull(orders.prefixStatus), ne(orders.prefixStatus, "pending"))))
     .orderBy(asc(orders.paidAt))
     .limit(50)
   return json({
     orders: rows.map((o) => ({
       code: o.code,
       player: o.giftTo || o.nick,
-      items: o.items.map((i) => ({ id: i.id, dur: i.dur, qty: i.qty, unit: i.unit })),
+      // отклонённый префикс не выдаём (остальные товары заказа — да)
+      items: o.items
+        .filter((i) => !(i.id === "prefix" && o.prefixStatus === "rejected"))
+        .map((i) => ({ id: i.id, dur: i.dur, qty: i.qty, unit: i.unit, ...(i.text ? { text: i.text } : {}) })),
     })),
   })
 }

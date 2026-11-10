@@ -1,6 +1,6 @@
 import { boolean, integer, jsonb, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core"
 
-export type OrderItem = { id: string; dur: "30" | "forever" | ""; qty: number; unit: number }
+export type OrderItem = { id: string; dur: "30" | "forever" | ""; qty: number; unit: number; text?: string }
 
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
@@ -26,5 +26,9 @@ export const orders = pgTable("orders", {
   deliveryManual: jsonb("delivery_manual").$type<string[]>(),
   // Автоматична оплата (monobank): що і коли надійшло
   paymentLog: jsonb("payment_log").$type<string[]>(),
+  payLink: text("pay_link"),
+  // Личный префикс: pending — ждёт решения администратора, approved — выдать, rejected — не выдавать
+  prefixStatus: text("prefix_status"),
+  prefixNote: text("prefix_note"), // посилання на оплату (DonatePay / рахунок Telegram Stars)
   payAmount: text("pay_amount"), // сума в USDT для оплати криптою (за курсом на момент замовлення)
 })

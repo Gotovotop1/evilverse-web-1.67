@@ -1,6 +1,8 @@
 import { monoJarLink, monoConfigured } from "@/lib/mono"
 import { TON_WALLET, USDT_TON_MASTER, tonConfigured } from "@/lib/ton"
 import { TRON_WALLET, tronConfigured } from "@/lib/tron"
+import { donatepayConfigured } from "@/lib/donatepay"
+import { starsConfigured } from "@/lib/stars"
 
 export const dynamic = "force-dynamic"
 
@@ -11,6 +13,8 @@ export function GET() {
       mono: monoConfigured() ? { link: monoJarLink() } : null,
       ton: tonConfigured() ? { wallet: TON_WALLET, jetton: USDT_TON_MASTER } : null,
       tron: tronConfigured() ? { wallet: TRON_WALLET } : null,
+      donatepay: donatepayConfigured() ? {} : null,
+      stars: starsConfigured() ? {} : null,
     },
     { headers: { "Cache-Control": "public, max-age=60" } },
   )

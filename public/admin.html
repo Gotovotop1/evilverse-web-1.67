@@ -51,6 +51,11 @@
     .mono { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 14px; display: grid; gap: 4px; }
     .mono .err { color: #ff6b6b; } .mono .ok { color: var(--green); }
     .paylog { color: var(--green); font-size: 14px; }
+    .prefix-box { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; border: 1px dashed var(--line); border-radius: 6px; padding: 8px 10px; font-size: 14px; }
+    .prefix-box.p-pending { border-color: #c800ff; }
+    .prefix-box.p-approved { color: var(--green); }
+    .prefix-box.p-rejected { color: #ff6b6b; }
+    .prefix-text { color: var(--amber); font-size: 16px; }
     @media (max-width: 640px) { header h1 { font-size: 18px; } }
   </style>
 </head>
@@ -63,6 +68,7 @@
       <option value="paid">Оплачені</option>
       <option value="cancelled">Скасовані</option>
       <option value="all">Усі</option>
+      <option value="prefix">Префікси на перевірці</option>
     </select>
     <button id="refresh">Оновити</button>
     <button id="logout">Вийти</button>
@@ -86,7 +92,7 @@
     const KEY = "ev_admin_token";
     let token = sessionStorage.getItem(KEY) || "";
     const NAMES = {
-      prime: "Prime (30 дн.)", prime_plus: "Prime+ (30 дн.)",
+      prime: "Prime (30 дн.)", prime_plus: "Prime+ (30 дн.)", prime_inf: "Prime ∞ (30 дн.)", c_subs: "Кейс Підписок",
       bis: "Біс", prizrak: "Привид", cerber: "Цербер", zhnets: "Жнець", demon: "Демон", arhidemon: "Архідемон",
       vladyka: "Владика", bezodnya: "Безодня",
       t100: "100 фішок", t300: "300+30 фішок", t600: "600+90 фішок", t1200: "1200+240 фішок", t3000: "3000+900 фішок",
@@ -99,9 +105,9 @@
       legacy: ["delivered", "видано раніше (вручну)"],
     };
     const STATUS = { pending: "очікує оплату", paid: "оплачено", cancelled: "скасовано" };
-    const METHODS = { mono: "monobank (авто)", ton: "USDT TON (авто)", privat: "Приват", crypto: "USDT TRC20 (авто)" };
+    const METHODS = { free: "безкоштовно (Prime ∞)", mono: "monobank (авто)", ton: "USDT TON (авто)", privat: "Приват", crypto: "USDT TRC20 (авто)", donatepay: "DonatePay ₽ (авто)", stars: "Telegram Stars (авто)" };
 
-    const PROVIDERS = { mono: ["Банка monobank", "грн"], ton: ["USDT (TON)", "USDT"], tron: ["USDT (TRC20)", "USDT"] };
+    const PROVIDERS = { mono: ["Банка monobank", "грн"], ton: ["USDT (TON)", "USDT"], tron: ["USDT (TRC20)", "USDT"], donatepay: ["DonatePay (рублі)", "₽"], stars: ["Telegram Stars", "⭐"] };
     function renderPayments(p) {
       const box = $("#mono");
       const when = (s) => s ? esc(new Date(s.split(" ")[0]).toLocaleString("uk-UA")) : "ще не було";
@@ -130,7 +136,7 @@
 
     function item(i) {
       const dur = (i.dur === "30" && !String(NAMES[i.id] || "").includes("30 дн")) ? " · 30 дн." : i.dur === "forever" ? " · назавжди" : "";
-      return `${esc(NAMES[i.id] || i.id)}${dur}${i.qty > 1 ? " ×" + i.qty : ""}`;
+      return `${esc(NAMES[i.id] || i.id)}${dur}${i.qty > 1 ? " ×" + i.qty : ""}${i.text ? ` «<b>${esc(i.text)}</b>»` : ""}`;
     }
 
     function render(list) {
@@ -139,6 +145,15 @@
         const d = DELIVERY[o.deliveryStatus ?? "null"] || DELIVERY.null;
         const delivery = o.status === "paid" ? `<span class="badge b-${d[0]}">${d[1]}</span>` : "";
         const gift = o.giftTo ? ` → подарунок для <b>${esc(o.giftTo)}</b>` : "";
+        const prefixItem = (o.items || []).find((i) => i.id === "prefix");
+        const prefixBox = prefixItem && o.prefixStatus ? `<div class="prefix-box p-${esc(o.prefixStatus)}">
+            <span>Префікс: <b class="prefix-text">${esc(prefixItem.text || "—")}</b> ·
+              ${o.prefixStatus === "pending" ? (o.status === "paid" ? "чекає твого рішення" : "буде на перевірці після оплати")
+                : o.prefixStatus === "approved" ? "схвалено ✔" : `відхилено${o.prefixNote ? ": " + esc(o.prefixNote) : ""}`}</span>
+            ${o.prefixStatus === "pending" && o.status === "paid" ? `<span class="actions">
+              <button class="ok" data-act="prefix-approve" data-code="${esc(o.code)}">✔ Схвалити</button>
+              <button class="bad" data-act="prefix-reject" data-code="${esc(o.code)}">✖ Відхилити</button></span>` : ""}
+          </div>` : "";
         const manual = (o.deliveryManual || []).length ? `<div class="manual">Видати вручну: ${esc(o.deliveryManual.join(", "))}</div>` : "";
         const paylog = (o.paymentLog || []).length ? `<div class="paylog">${esc(o.paymentLog.join(" · "))}</div>` : "";
         const log = (o.deliveryLog || []).length ? `<details><summary>Журнал видачі</summary><pre>${esc(o.deliveryLog.join("\n"))}</pre></details>` : "";
@@ -158,8 +173,8 @@
           </div>
           <div>Нік: <b>${esc(o.nick)}</b>${gift} · Discord: ${esc(o.discord)} · Оплата: ${esc(METHODS[o.method] || o.method)}${o.promo ? " · промокод " + esc(o.promo) : ""}</div>
           <div class="items">${o.items.map(item).join(" · ")}</div>
-          <div class="total">Сума: ${esc(o.total)} грн${o.payAmount ? ` = ${esc(o.payAmount)} USDT` : ""}${o.discount ? ` <span class="muted">(знижка ${esc(o.discount)})</span>` : ""}</div>
-          ${paylog}${manual}${log}
+          <div class="total">Сума: ${esc(o.total)} грн${o.payAmount ? ` = ${esc(o.payAmount)} ${o.method === "donatepay" ? "₽" : o.method === "stars" ? "⭐" : "USDT"}` : ""}${o.discount ? ` <span class="muted">(знижка ${esc(o.discount)})</span>` : ""}</div>
+          ${prefixBox}${paylog}${manual}${log}
           ${actions ? `<div class="actions">${actions}</div>` : ""}
         </article>`;
       }).join("");
@@ -195,12 +210,23 @@
       const btn = e.target.closest("button[data-act]");
       if (!btn) return;
       const code = btn.dataset.code, act = btn.dataset.act;
-      const question = act === "paid" ? `Підтвердити оплату ${code}? Товар буде видано автоматично.`
-        : act === "cancelled" ? `Скасувати замовлення ${code}?` : `Повторити видачу ${code}? Вже видане повторно не видається.`;
-      if (!confirm(question)) return;
+      let payload;
+      if (act === "prefix-approve") {
+        if (!confirm(`Схвалити префікс у замовленні ${code}? Його буде видано в грі автоматично.`)) return;
+        payload = { code, prefix: "approve" };
+      } else if (act === "prefix-reject") {
+        const note = prompt(`Причина відмови для ${code} (необов'язково). Гроші за платний префікс повертаєш вручну.`, "");
+        if (note === null) return;
+        payload = { code, prefix: "reject", note };
+      } else {
+        const question = act === "paid" ? `Підтвердити оплату ${code}? Товар буде видано автоматично.`
+          : act === "cancelled" ? `Скасувати замовлення ${code}?` : `Повторити видачу ${code}? Вже видане повторно не видається.`;
+        if (!confirm(question)) return;
+        payload = act === "redeliver" ? { code, redeliver: true } : { code, status: act };
+      }
       btn.disabled = true;
       try {
-        await api("PATCH", act === "redeliver" ? { code, redeliver: true } : { code, status: act });
+        await api("PATCH", payload);
         await load();
       } catch (err) { alert("Помилка: " + err.message); btn.disabled = false; }
     });
