@@ -172,9 +172,9 @@ function miniHTML(src) {
 
 // [підписка, рідкість, шанс у %]. Сума = 100. Шанси чорнові — мають збігатися з налаштуванням кейса в CrazyCrates.
 const SUB_DROPS = [
-  ["Prime · 7 днів", "common", 28], ["Prime · 14 днів", "common", 18], ["Prime+ · 7 днів", "rare", 16],
-  ["Prime · 30 днів", "rare", 12], ["Prime+ · 14 днів", "epic", 10], ["Prime ∞ · 7 днів", "epic", 8],
-  ["Prime+ · 30 днів", "legendary", 6], ["Prime ∞ · 30 днів", "legendary", 2],
+  ["Prime · 7 днів", "common", 27], ["Prime · 14 днів", "common", 18], ["Prime+ · 7 днів", "rare", 16],
+  ["Prime · 30 днів", "rare", 12], ["Prime+ · 14 днів", "epic", 10], ["Prime ∞ · 7 днів", "epic", 7],
+  ["Prime+ · 30 днів", "legendary", 5], ["Prime ∞ · 14 днів", "legendary", 3], ["Prime ∞ · 30 днів", "legendary", 2],
 ];
 
 const XP_DROPS = [
