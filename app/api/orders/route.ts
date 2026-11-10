@@ -100,7 +100,7 @@ export async function POST(req: Request) {
   // Посилання на оплату: DonatePay — сторінка з сумою й кодом; Stars — рахунок Telegram
   let payLink: string | null = null
   try {
-    if (method === "donatepay") payLink = donatepayLink(Number(payAmount), code)
+    if (method === "donatepay") payLink = donatepayLink(Number(payAmount), code, nick)
     if (method === "stars") {
       // Вебхук — лише на основний (production) домен: превʼю-адреси Vercel закриті паролем, Telegram туди не достукається
       const host = process.env.VERCEL_PROJECT_PRODUCTION_URL || req.headers.get("x-forwarded-host") || req.headers.get("host")

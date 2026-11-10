@@ -31,9 +31,10 @@ export function donatepayConfigured() {
   return Boolean(process.env.DONATEPAY_TOKEN?.trim() && pageBase())
 }
 
-/** Посилання на сторінку оплати з уже заповненими сумою й кодом. */
-export function donatepayLink(rub: number, code: string) {
+/** Посилання на сторінку оплати з уже заповненими ім'ям (ніком гравця), сумою й кодом. */
+export function donatepayLink(rub: number, code: string, name: string) {
   const u = new URL(pageBase()!)
+  u.searchParams.set("name", name)
   u.searchParams.set("amount", String(rub))
   u.searchParams.set("currency", "RUB")
   u.searchParams.set("message", code)
