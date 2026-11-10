@@ -5,6 +5,7 @@ import { ensureDeliveryColumns } from "@/lib/db/ensure"
 import { orders } from "@/lib/db/schema"
 import { clientIp, rateLimited } from "@/lib/server-utils"
 import { checkPayments, paymentsStatus } from "@/lib/payments"
+import { refundStars } from "@/lib/stars"
 
 export const dynamic = "force-dynamic"
 
@@ -60,6 +61,16 @@ export async function PATCH(req: Request) {
         .where(eq(orders.code, code))
     }
     return json({ code: o.code, prefixStatus: o.prefixStatus })
+  }
+
+  // { code, refundStars: true } — повернути зірки Telegram (тестова покупка / повернення гравцю)
+  if (body?.refundStars === true) {
+    try {
+      const r = await refundStars(code)
+      return "error" in r ? json(r, 409) : json(r)
+    } catch (error) {
+      return json({ error: String((error as Error)?.message ?? error) }, 502)
+    }
   }
 
   if (body?.redeliver === true) {

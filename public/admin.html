@@ -162,6 +162,8 @@
           o.status === "pending" ? `<button class="bad" data-act="cancelled" data-code="${esc(o.code)}">✖ Скасувати</button>` : "",
           o.status === "paid" && (o.deliveryStatus === "failed" || o.deliveryStatus === "manual")
             ? `<button data-act="redeliver" data-code="${esc(o.code)}">↻ Повторити видачу</button>` : "",
+          o.status === "paid" && o.method === "stars" && (o.paymentLog || []).some((l) => l.startsWith("Telegram Stars: +"))
+            ? `<button class="bad" data-act="refund-stars" data-code="${esc(o.code)}">↩ Повернути зірки</button>` : "",
         ].join("");
         return `<article class="order">
           <div class="top">
@@ -218,6 +220,9 @@
         const note = prompt(`Причина відмови для ${code} (необов'язково). Гроші за платний префікс повертаєш вручну.`, "");
         if (note === null) return;
         payload = { code, prefix: "reject", note };
+      } else if (act === "refund-stars") {
+        if (!confirm(`Повернути зірки за ${code}? Telegram поверне їх гравцю, замовлення стане скасованим.\nЯкщо товар уже видано в грі — забери його вручну.`)) return;
+        payload = { code, refundStars: true };
       } else {
         const question = act === "paid" ? `Підтвердити оплату ${code}? Товар буде видано автоматично.`
           : act === "cancelled" ? `Скасувати замовлення ${code}?` : `Повторити видачу ${code}? Вже видане повторно не видається.`;
@@ -226,9 +231,14 @@
       }
       btn.disabled = true;
       try {
-        await api("PATCH", payload);
+        const res = await api("PATCH", payload);
+        if (act === "refund-stars") alert(res.delivered ? "Зірки повернено. Товар уже був виданий у грі — забери його вручну." : "Зірки повернено, замовлення скасовано.");
         await load();
-      } catch (err) { alert("Помилка: " + err.message); btn.disabled = false; }
+      } catch (err) {
+        const why = { no_user_id: "у платежі немає id гравця (оплата була до оновлення сайту) — поверни через бота вручну",
+          already_refunded: "зірки за це замовлення вже повернено", no_stars_payment: "платіж зірками не знайдено" }[err.message];
+        alert("Помилка: " + (why || err.message)); btn.disabled = false;
+      }
     });
     if (token) load(); else showLogin();
     setInterval(() => { if (token && !document.hidden) load(); }, 20000);

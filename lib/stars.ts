@@ -67,6 +67,7 @@ type Update = {
   pre_checkout_query?: { id: string; currency: string; total_amount: number; invoice_payload: string; from?: { id: number; username?: string } }
   message?: {
     chat?: { id: number }
+    from?: { id: number }
     text?: string
     successful_payment?: { currency: string; total_amount: number; invoice_payload: string; telegram_payment_charge_id: string }
   }
@@ -92,7 +93,7 @@ export async function handleUpdate(update: Update) {
     const inserted = await pool.query(
       `INSERT INTO crypto_payments (id, network, code, amount, comment, paid_at) VALUES ($1, 'stars', $2, $3, $4, now())
        ON CONFLICT (id) DO NOTHING RETURNING id`,
-      [`stars:${p.telegram_payment_charge_id}`, p.invoice_payload, p.total_amount, `charge ${p.telegram_payment_charge_id}`],
+      [`stars:${p.telegram_payment_charge_id}`, p.invoice_payload, p.total_amount, `charge ${p.telegram_payment_charge_id} user ${update.message?.from?.id ?? update.message?.chat?.id ?? ""}`],
     )
     if (!inserted.rowCount) return
     const line = `Telegram Stars: +${p.total_amount} ⭐ (${new Date().toLocaleString("uk-UA", { timeZone: "Europe/Kyiv" })}, charge ${p.telegram_payment_charge_id})`
@@ -129,6 +130,32 @@ export async function handleUpdate(update: Update) {
   if (update.message?.chat?.id && update.message.text) {
     await tg("sendMessage", { chat_id: update.message.chat.id, text: "🔥 Це бот оплати EVILVERSE. Оформи замовлення на сайті й обери «Telegram Stars» — рахунок відкриється тут." }).catch(() => {})
   }
+}
+
+/**
+ * Повернути зірки за замовлення (напр. після тестової покупки). Telegram повертає їх гравцю повністю.
+ * Замовлення стає «скасованим»; якщо товар уже видано в грі — забери його вручну.
+ */
+export async function refundStars(code: string) {
+  await ensureDeliveryColumns()
+  const row = (await pool.query(
+    "SELECT id, comment FROM crypto_payments WHERE network = 'stars' AND code = $1 ORDER BY paid_at DESC LIMIT 1", [code],
+  )).rows[0] as { id: string; comment: string } | undefined
+  if (!row) return { error: "no_stars_payment" as const }
+  if (/\brefunded\b/.test(row.comment)) return { error: "already_refunded" as const }
+  const charge = row.id.replace(/^stars:/, "")
+  const user = Number(/\buser (\d+)/.exec(row.comment)?.[1])
+  if (!user) return { error: "no_user_id" as const }
+  await tg("refundStarPayment", { user_id: user, telegram_payment_charge_id: charge })
+  await pool.query("UPDATE crypto_payments SET comment = comment || ' refunded' WHERE id = $1", [row.id])
+  const line = `Telegram Stars: зірки повернено (${new Date().toLocaleString("uk-UA", { timeZone: "Europe/Kyiv" })})`
+  const done = await pool.query(
+    `UPDATE orders SET status = 'cancelled', payment_log = COALESCE(payment_log, '[]'::jsonb) || $2::jsonb
+     WHERE code = $1 RETURNING code, status, delivery_status`,
+    [code, JSON.stringify([line])],
+  )
+  await tg("sendMessage", { chat_id: user, text: `↩ Зірки за замовлення ${code} повернено.` }).catch(() => {})
+  return { code, status: "cancelled", delivered: done.rows[0]?.delivery_status === "delivered" }
 }
 
 export async function starsStatus() {
