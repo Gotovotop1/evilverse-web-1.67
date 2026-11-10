@@ -17,10 +17,10 @@ export async function GET(req: Request) {
   await ensureDeliveryColumns()
   await checkPayments()
   const rows = await db
-    .select({ code: orders.code, status: orders.status, delivery: orders.deliveryStatus })
+    .select({ code: orders.code, status: orders.status, delivery: orders.deliveryStatus, prefix: orders.prefixStatus })
     .from(orders)
     .where(inArray(orders.code, codes))
-  const result: Record<string, { status: string; delivery: string | null }> = {}
-  for (const r of rows) result[r.code] = { status: r.status, delivery: r.delivery }
+  const result: Record<string, { status: string; delivery: string | null; prefix: string | null }> = {}
+  for (const r of rows) result[r.code] = { status: r.status, delivery: r.delivery, prefix: r.prefix }
   return Response.json({ orders: result }, { headers: { "Cache-Control": "no-store" } })
 }

@@ -68,7 +68,7 @@ const SUBS = [
       "Вхід на повний сервер", "Пози /spin та /crawl", "Свій час доби /ptime", "Автоприйняття телепорту /tpauto",
       "Ефекти убивства (6 видів)", "Слід за стрілами та тризубом", "Компас до місця смерті",
       "Своє повідомлення про смерть", "Бан після смерті коротший на 40%", "Роль Prime+ у Discord"] },
-  { id: "prime_inf", name: "Prime ∞", color: "#e0006a", price: 144, ingame: 1299, icon: "∞", ribbon: "∞ МАКС",
+  { id: "prime_inf", name: "Prime ∞", color: "#ff1a5c", price: 144, ingame: 1299, icon: "∞", ribbon: "∞ МАКС",
     desc: "Максимум: ексклюзивна косметика, повернення після смерті та кешбек. 30 днів.",
     perks: ["Усе з Prime+", "8 точок дому", "+8 слотів аукціону", "/near — хто поруч",
       "/back до місця смерті (5 хв після розбану, лише якщо вбив не гравець)", "Ексклюзивна аура «Безкінечність»",
@@ -82,7 +82,7 @@ const CASES = [
     perks: ["Від 500 до 100 000 досвіду", "Досвід — основна валюта сервера", "Джекпот 100 000 — шанс 1%", "Видається одразу на баланс"] },
   { id: "c_titles", name: "Кейс Титулів", color: "#ff4fa3", price: 59, icon: "К", desc: "Усі 18 унікальних титулів сервера з кольоровими градієнтами.",
     perks: ["18 титулів, які вже є на сервері", "Титул залишається назавжди", "Рідкісні титули — з шансом від 1%", "Кожен титул — свій колір і градієнт у чаті"] },
-  { id: "c_subs", name: "Кейс Підписок", color: "#c800ff", price: 99, icon: "К", desc: "Prime, Prime+ або Prime ∞ на 7, 14 чи 30 днів.",
+  { id: "c_subs", name: "Кейс Підписок", color: "#ff1a5c", price: 99, icon: "К", desc: "Prime, Prime+ або Prime ∞ на 7, 14 чи 30 днів.",
     perks: ["Prime, Prime+ і Prime ∞", "На 7, 14 або 30 днів", "Prime ∞ на 30 днів — шанс 2%", "Видається одразу в гру"] },
 ];
 
@@ -627,8 +627,8 @@ function openProduct(id) {
       <label class="opt"><input type="radio" name="dur" value="30" checked /><b>30 днів</b><small>${money(p.price)}</small></label>
     </div></div>
     <p class="muted small">Видається автоматично, щойно оплату підтверджено. Якщо підписка вже є — час додається.
-      Також можна купити в грі за <span class="fishka">${p.ingame}<i class="fishka-ico" aria-hidden="true"></i></span> фішок: /prime.
-      Перейти на вищу підписку можна в грі з доплатою лише різниці.</p>`;
+      Також можна купити в грі за <span class="fishka">${p.ingame}<i class="fishka-ico" aria-hidden="true"></i></span> фішок: /prime</p>
+    <p class="muted small">Перейти на вищу підписку можна в грі з доплатою лише різниці.</p>`;
   } else if (p.id === "prefix") {
     options = `<div class="field"><label for="prefixText">Текст префікса <span class="req">*</span></label>
       <input id="prefixText" maxlength="10" autocomplete="off" placeholder="Демон_666" />
@@ -1279,6 +1279,9 @@ const currentLang = () => window.EvilI18n?.language || "uk";
 
 const ORDER_STATUS_TEXT = (st) => st.status === "cancelled" ? "Скасовано"
   : st.status !== "paid" ? "Очікує оплату"
+  : st.prefix === "pending" ? "Оплачено · префікс на перевірці"
+  : st.prefix === "rejected" && st.delivery == null ? "Оплачено · префікс відхилено, решта видається"
+  : st.prefix === "rejected" ? "Оплачено · префікс відхилено (тікет у Discord)"
   : st.delivery === "delivered" || st.delivery === "legacy" ? "Оплачено · видано в грі"
   : st.delivery === "manual" ? "Оплачено · частину видасть адміністрація"
   : st.delivery === "failed" ? "Оплачено · видача уточнюється"
