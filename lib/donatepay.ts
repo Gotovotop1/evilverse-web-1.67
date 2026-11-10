@@ -18,15 +18,22 @@ const PAGE = process.env.DONATEPAY_PAGE || "https://new.donatepay.ru"
 const MIN_INTERVAL_MS = 25_000
 const ACCEPT_RATIO = 0.97
 
-const nick = () => (process.env.DONATEPAY_NAME ?? "").trim().replace(/^@/, "")
+// DONATEPAY_NAME — нік на DonatePay (напр. Tar4ks) АБО повне посилання на твою сторінку донату
+// (напр. https://new.donatepay.ru/@1542675) — тоді воно береться як є.
+const pageBase = (): string | null => {
+  const raw = (process.env.DONATEPAY_NAME ?? "").trim()
+  if (/^https:\/\/([a-z0-9-]+\.)?donatepay\.(ru|eu)\/[^\s?#]+$/i.test(raw)) return raw.replace(/\/+$/, "")
+  const nick = raw.replace(/^@/, "")
+  return /^[\w.-]{2,64}$/.test(nick) ? `${PAGE}/${encodeURIComponent(nick)}` : null
+}
 
 export function donatepayConfigured() {
-  return Boolean(process.env.DONATEPAY_TOKEN?.trim() && /^[\w.-]{2,64}$/.test(nick()))
+  return Boolean(process.env.DONATEPAY_TOKEN?.trim() && pageBase())
 }
 
 /** Посилання на сторінку оплати з уже заповненими сумою й кодом. */
 export function donatepayLink(rub: number, code: string) {
-  const u = new URL(`${PAGE}/${encodeURIComponent(nick())}`)
+  const u = new URL(pageBase()!)
   u.searchParams.set("amount", String(rub))
   u.searchParams.set("currency", "RUB")
   u.searchParams.set("message", code)
