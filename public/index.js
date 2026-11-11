@@ -189,9 +189,9 @@ const CASE_LOOT = {
 };
 
 const EXTRAS = [
-  { id: "unmute", name: "Розмут", color: "#9fb3c8", price: 49, icon: "М", desc: "Зняття мута в чаті (не діє на мут за образу адміністрації)." },
-  { id: "unban", name: "Розбан", color: "#ff3b2f", price: 149, icon: "Р", desc: "Розбан акаунту. Не діє на бан за чити повторно." },
-  { id: "prefix", name: "Свій префікс", color: "#b04aff", price: 79, icon: "П", desc: "Свій префікс до 10 символів. Після перевірки — назавжди у /prime settings." },
+  { id: "unmute", name: "Розмут", color: "#9fb3c8", price: 19, icon: "М", desc: "Зняття мута в чаті (не діє на мут за образу адміністрації)." },
+  { id: "unban", name: "Розбан", color: "#ff3b2f", price: 59, icon: "Р", desc: "Розбан акаунту. Не діє на бан за чити повторно." },
+  { id: "prefix", name: "Свій префікс", color: "#b04aff", price: 39, icon: "П", desc: "Свій префікс до 10 символів. Після перевірки — назавжди у /prime settings." },
 ];
 
 const PRODUCTS = [

@@ -15,9 +15,9 @@ export const CATALOG: Record<string, { cat: Category; price: number }> = {
   c_subs: { cat: "case", price: 59 },
   c_titles: { cat: "case", price: 49 },
   c_xp: { cat: "case", price: 39 },
-  unmute: { cat: "extra", price: 49 },
-  unban: { cat: "extra", price: 149 },
-  prefix: { cat: "extra", price: 79 },
+  unmute: { cat: "extra", price: 19 },
+  unban: { cat: "extra", price: 59 },
+  prefix: { cat: "extra", price: 39 },
 }
 
 export const PROMO: Record<string, number> = { EVIL10: 10, START15: 15, HELL20: 20 }
