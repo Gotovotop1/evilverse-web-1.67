@@ -64,6 +64,16 @@ export function ensureDeliveryColumns() {
       CREATE TABLE IF NOT EXISTS app_kv (key text PRIMARY KEY, value text NOT NULL);
       -- Лічильник захисту від спаму (замовлення, заявки) — спільний для всіх копій сайту на Vercel
       CREATE TABLE IF NOT EXISTS rate_limits (key text PRIMARY KEY, window_start timestamptz NOT NULL, hits integer NOT NULL);
+      -- Голоси з моніторингів: один голос з моніторингу на нік за добу (day — дата за Києвом)
+      CREATE TABLE IF NOT EXISTS votes (
+        id serial PRIMARY KEY,
+        site text NOT NULL,
+        nick text NOT NULL,
+        day text NOT NULL,
+        order_code text,
+        created_at timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS votes_once_a_day ON votes (site, lower(nick), day);
     `)
     .then(() => undefined)
     .catch((error) => {
