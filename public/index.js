@@ -407,7 +407,7 @@ async function copyText(text, msg = "Скопійовано!") {
 /* =========================================================
    РОУТИНГ ВКЛАДОК
    ========================================================= */
-const TABS = ["home", "shop", "apply", "rules", "faq", "profile"];
+const TABS = ["home", "shop", "apply", "rules", "faq", "top", "profile"];
 function showTab(tab, push = true) {
   if (!TABS.includes(tab)) tab = "home";
   $$(".page").forEach((p) => (p.hidden = p.dataset.page !== tab));
@@ -416,6 +416,7 @@ function showTab(tab, push = true) {
   closeMenu();
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
   if (tab === "profile") renderProfile();
+  if (tab === "top") loadTop();
   observeReveal();
 }
 document.addEventListener("click", (e) => {
@@ -1375,8 +1376,47 @@ async function loadFeed() {
   renderFeed();
 }
 
+/* =========================================================
+   ТОП ГРАВЦІВ (дані з сервера раз на 5 хв + голоси за місяць)
+   ========================================================= */
+const TOP_BOARDS = [
+  { key: "kills", title: "Вбивства в СМП", icon: "⚔" },
+  { key: "playtime", title: "Час на сервері", icon: "⏳" },
+  { key: "streak", title: "Серія днів", icon: "🔥" },
+  { key: "votes", title: "Голоси за місяць", icon: "🗳" },
+];
+let topData = null;
+function playtimeHours(v) {
+  const n = (re) => Number((re.exec(v) || [0, 0])[1]);
+  if (!/\d+[dhms]/.test(v)) return v;
+  return `${n(/(\d+)d/) * 24 + n(/(\d+)h/)} ${tr("год")}`;
+}
+function renderTop() {
+  if (!topData) return;
+  $("#topBoards").innerHTML = TOP_BOARDS.map((b) => {
+    const rows = topData.boards[b.key] || [];
+    const list = rows.length ? rows.map((r, i) => `<li>
+        <span class="donor-pos">${i + 1}</span>
+        <span class="donor-name"><b>${esc(r.name)}</b></span>
+        <span class="donor-sum">${esc(b.key === "playtime" ? playtimeHours(r.value) : r.value)}</span>
+      </li>`).join("") : `<li class="feed-empty">${esc(tr("Ще немає даних"))}</li>`;
+    return `<div class="feed-card"><h2 class="section-title">${b.icon} ${esc(tr(b.title))}</h2><ol class="donors">${list}</ol></div>`;
+  }).join("");
+}
+async function loadTop() {
+  try {
+    const [stats, votes] = await Promise.all([
+      fetch("/api/stats").then((r) => r.json()).catch(() => ({ boards: {} })),
+      fetch("/api/votes").then((r) => r.json()).catch(() => ({ top: [] })),
+    ]);
+    topData = { boards: { ...(stats.boards || {}), votes: (votes.top || []).map((v) => ({ name: v.nick, value: String(v.votes) })) } };
+  } catch { topData ||= { boards: {} }; }
+  renderTop();
+}
+
 document.addEventListener("evil:languagechange", () => {
   renderFeed();
+  renderTop();
   if (!$("#page-profile").hidden) renderProfile();
 });
 
