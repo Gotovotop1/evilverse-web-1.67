@@ -4,7 +4,7 @@
    НАЛАШТУВАННЯ — заміни реквізити на свої
    ========================================================= */
 const CONFIG = {
-  IP: "evilverse.tkmc.net",
+  IP: "evilverse.lol",
   DISCORD: "https://discord.gg/8eHG2YsePC",
   DISCORD_CODE: "8eHG2YsePC",
   VERSIONS: "1.8 – 26.2",

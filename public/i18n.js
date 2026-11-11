@@ -171,9 +171,9 @@
     if (languageSelect && languageSelect.value !== currentLanguage) languageSelect.value = currentLanguage;
     const pageTitles = { uk: "EVILVERSE — пекельний Minecraft сервер", ru: "EVILVERSE — адский Minecraft-сервер", en: "EVILVERSE — Hellish Minecraft Server" };
     const descriptions = {
-      uk: "EVILVERSE — Minecraft сервер з пекельною атмосферою. IP: evilverse.tkmc.net. Підписки Prime, фішки, кейси, івенти та набір у команду.",
-      ru: "EVILVERSE — Minecraft-сервер с адской атмосферой. IP: evilverse.tkmc.net. Подписки Prime, фишки, кейсы, события и набор в команду.",
-      en: "EVILVERSE is a hellish Minecraft server. IP: evilverse.tkmc.net. Prime subscriptions, chips, crates, events, and team applications."
+      uk: "EVILVERSE — Minecraft сервер з пекельною атмосферою. IP: evilverse.lol. Підписки Prime, фішки, кейси, івенти та набір у команду.",
+      ru: "EVILVERSE — Minecraft-сервер с адской атмосферой. IP: evilverse.lol. Подписки Prime, фишки, кейсы, события и набор в команду.",
+      en: "EVILVERSE is a hellish Minecraft server. IP: evilverse.lol. Prime subscriptions, chips, crates, events, and team applications."
     };
     document.title = pageTitles[currentLanguage];
     const description = document.querySelector('meta[name="description"]');

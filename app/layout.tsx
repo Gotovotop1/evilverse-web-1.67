@@ -4,7 +4,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'EVILVERSE — пекельний Minecraft сервер',
-  description: 'EVILVERSE — Minecraft сервер з пекельною атмосферою. IP: evilverse.tkmc.net. Привілеї, фішки, кейси, івенти та набір у команду.',
+  description: 'EVILVERSE — Minecraft сервер з пекельною атмосферою. IP: evilverse.lol. Привілеї, фішки, кейси, івенти та набір у команду.',
   generator: 'EVILVERSE',
   icons: {
     icon: [
