@@ -69,7 +69,7 @@
       <option value="cancelled">Скасовані</option>
       <option value="all">Усі</option>
       <option value="prefix">Префікси на перевірці</option>
-      <option value="votes">Голоси з моніторингів</option>
+      <option value="votes">Голоси та соцмережі</option>
     </select>
     <button id="refresh">Оновити</button>
     <button id="logout">Вийти</button>
@@ -99,7 +99,7 @@
       t100: "100 фішок", t300: "300+30 фішок", t600: "600+90 фішок", t1200: "1200+240 фішок", t3000: "3000+900 фішок",
       unban: "Розбан", unmute: "Розмут", nickcolor: "Кольоровий нік", prefix: "Свій префікс",
       c_xp: "Кейс Досвіду", c_titles: "Кейс Титулів", c_ranks: "Кейс Привілегій",
-      vote: "Нагорода за голос", vote_bonus: "Бонус за 5 голосів",
+      vote: "Нагорода за голос", vote_bonus: "Бонус за 5 голосів", social_tg: "Нагорода за Telegram",
     };
     const DELIVERY = {
       null: ["waiting", "чекає видачі"], delivered: ["delivered", "видано ✔"],
@@ -107,7 +107,7 @@
       legacy: ["delivered", "видано раніше (вручну)"],
     };
     const STATUS = { pending: "очікує оплату", paid: "оплачено", cancelled: "скасовано" };
-    const METHODS = { free: "безкоштовно (Prime ∞)", mono: "monobank (авто)", ton: "USDT TON (авто)", privat: "Приват", crypto: "USDT TRC20 (авто)", donatepay: "DonatePay ₽ (авто)", stars: "Telegram Stars (авто)", vote: "голос на моніторингу" };
+    const METHODS = { free: "безкоштовно (Prime ∞)", mono: "monobank (авто)", ton: "USDT TON (авто)", privat: "Приват", crypto: "USDT TRC20 (авто)", donatepay: "DonatePay ₽ (авто)", stars: "Telegram Stars (авто)", vote: "голос на моніторингу", social: "нагорода за соцмережі" };
 
     const PROVIDERS = { mono: ["Банка monobank", "грн"], ton: ["USDT (TON)", "USDT"], tron: ["USDT (TRC20)", "USDT"], donatepay: ["DonatePay (рублі)", "₽"], stars: ["Telegram Stars", "⭐"] };
     function renderPayments(p) {

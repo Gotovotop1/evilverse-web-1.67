@@ -1,4 +1,4 @@
-import { and, desc, eq, ne } from "drizzle-orm"
+import { and, desc, eq, ne, or } from "drizzle-orm"
 import { bearerMatches } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { ensureDeliveryColumns } from "@/lib/db/ensure"
@@ -28,9 +28,9 @@ export async function GET(req: Request) {
   const status = new URL(req.url).searchParams.get("status") ?? "all"
   const base = db.select().from(orders)
   // голоси з моніторингів — окремий фільтр, щоб не засмічувати список покупок
-  const notVote = ne(orders.method, "vote")
+  const notVote = and(ne(orders.method, "vote"), ne(orders.method, "social"))
   const filtered = status === "prefix" ? base.where(eq(orders.prefixStatus, "pending"))
-    : status === "votes" ? base.where(eq(orders.method, "vote"))
+    : status === "votes" ? base.where(or(eq(orders.method, "vote"), eq(orders.method, "social")))
     : ["pending", "paid", "cancelled"].includes(status) ? base.where(and(eq(orders.status, status), notVote)) : base.where(notVote)
   const rows = await filtered
     .orderBy(desc(orders.createdAt))

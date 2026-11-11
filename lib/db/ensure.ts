@@ -74,6 +74,16 @@ export function ensureDeliveryColumns() {
         created_at timestamptz NOT NULL DEFAULT now()
       );
       CREATE UNIQUE INDEX IF NOT EXISTS votes_once_a_day ON votes (site, lower(nick), day);
+      -- Разові нагороди за соцмережі (Telegram): один акаунт і один нік — одна нагорода
+      CREATE TABLE IF NOT EXISTS social_claims (
+        id serial PRIMARY KEY,
+        kind text NOT NULL,
+        account text NOT NULL,
+        nick text NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS social_claims_account ON social_claims (kind, account);
+      CREATE UNIQUE INDEX IF NOT EXISTS social_claims_nick ON social_claims (kind, lower(nick));
     `)
     .then(() => undefined)
     .catch((error) => {
