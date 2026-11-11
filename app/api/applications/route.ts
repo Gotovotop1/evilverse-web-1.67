@@ -1,5 +1,5 @@
 import { NICK_RE } from "@/lib/catalog"
-import { clientIp, rateLimited, sendDiscordWebhook } from "@/lib/server-utils"
+import { clientIp, rateLimitedShared, sendDiscordWebhook } from "@/lib/server-utils"
 
 export const dynamic = "force-dynamic"
 
@@ -42,7 +42,7 @@ async function postToForum(url: string, threadName: string, payload: Record<stri
 }
 
 export async function POST(req: Request) {
-  if (rateLimited(`app:${clientIp(req)}`, 5, 60 * 60_000)) return Response.json({ error: "too_many_requests" }, { status: 429 })
+  if (await rateLimitedShared(`app:${clientIp(req)}`, 5, 60 * 60_000)) return Response.json({ error: "too_many_requests" }, { status: 429 })
 
   const body = await req.json().catch(() => null)
   const role = String(body?.role ?? "")

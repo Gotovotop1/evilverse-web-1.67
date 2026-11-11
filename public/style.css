@@ -396,9 +396,11 @@ body.hell-mode .hero-title { filter: drop-shadow(0 0 60px red) hue-rotate(-20deg
   .nav {
     position: fixed; top: 68px; left: 0; right: 0; flex-direction: column; padding: 12px 16px 20px;
     background: rgba(10,4,4,.97); border-bottom: 1px solid var(--line);
-    transform: translateY(-120%); transition: transform .3s; z-index: -1;
+    transform: translateY(-120%); z-index: -1;
+    /* закрытое меню скрыто полностью: на узких экранах шапка выше, и низ меню иначе выглядывал над логотипом */
+    visibility: hidden; transition: transform .3s, visibility 0s linear .3s;
   }
-  .nav.open { transform: none; }
+  .nav.open { transform: none; visibility: visible; transition: transform .3s, visibility 0s; }
   .nav-link { padding: 12px 14px; }
 }
 @media (max-width: 640px) {

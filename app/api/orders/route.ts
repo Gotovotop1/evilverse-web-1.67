@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm"
 import { randomBytes } from "node:crypto"
 import { CATALOG, ENABLED_PAYMENTS, NICK_RE, PROMO, normalizePrefix } from "@/lib/catalog"
-import { db } from "@/lib/db"
+import { db, pool } from "@/lib/db"
 import { orders, type OrderItem } from "@/lib/db/schema"
 import { ensureDeliveryColumns } from "@/lib/db/ensure"
-import { clientIp, rateLimited, sendDiscordWebhook } from "@/lib/server-utils"
+import { clientIp, rateLimitedShared, sendDiscordWebhook } from "@/lib/server-utils"
 import { monoConfigured } from "@/lib/mono"
 import { uahToRub, uahToStars, uahToUsdt } from "@/lib/rates"
 import { donatepayConfigured, donatepayLink } from "@/lib/donatepay"
@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic"
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } })
 
 export async function POST(req: Request) {
-  if (rateLimited(`order:${clientIp(req)}`, 8, 10 * 60_000)) return json({ error: "too_many_requests" }, 429)
+  if (await rateLimitedShared(`order:${clientIp(req)}`, 8, 10 * 60_000)) return json({ error: "too_many_requests" }, 429)
 
   let body: any
   try {
@@ -72,6 +72,17 @@ export async function POST(req: Request) {
     await ensureDeliveryColumns()
   } catch {
     return json({ error: "db_error" }, 500)
+  }
+
+  // Промокод — один раз на нік: рахуються оплачені замовлення і свіжі (до 2 годин) неоплачені,
+  // щоб не можна було відкрити кілька замовлень зі знижкою одночасно. Скасовані не рахуються.
+  if (promo) {
+    const used = await pool.query(
+      `SELECT 1 FROM orders WHERE promo = $1 AND lower(nick) = lower($2)
+         AND (status = 'paid' OR (status = 'pending' AND created_at > now() - interval '2 hours')) LIMIT 1`,
+      [promo, nick],
+    )
+    if (used.rowCount) return json({ error: "promo_used" }, 400)
   }
 
   // Оплата USDT (TON): фіксуємо суму в USDT за курсом на момент замовлення

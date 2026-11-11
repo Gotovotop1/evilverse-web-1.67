@@ -73,6 +73,18 @@ export async function PATCH(req: Request) {
     }
   }
 
+  // { code, demo: true | false } — тестовый заказ: не показывается в ленте покупок и топе донатеров
+  // (и, если ещё не выдан, не выдаётся на сервер). Отмечай так только свои проверки.
+  if (typeof body?.demo === "boolean") {
+    const updated = await db
+      .update(orders)
+      .set({ isDemo: body.demo })
+      .where(eq(orders.code, code))
+      .returning({ code: orders.code, isDemo: orders.isDemo })
+    if (!updated.length) return json({ error: "not_found" }, 404)
+    return json(updated[0])
+  }
+
   if (body?.redeliver === true) {
     const updated = await db
       .update(orders)

@@ -9,6 +9,30 @@ export function rateLimited(key: string, limit: number, windowMs: number) {
   return recent.length > limit
 }
 
+/**
+ * Те саме обмеження, але спільне для всіх копій сайту на Vercel (лічильник у базі, таблиця rate_limits).
+ * Спочатку дешева перевірка в пам'яті, потім — у базі. Якщо база недоступна, запит не блокуємо.
+ */
+export async function rateLimitedShared(key: string, limit: number, windowMs: number) {
+  if (rateLimited(key, limit, windowMs)) return true
+  try {
+    const { pool } = await import("@/lib/db")
+    const { ensureDeliveryColumns } = await import("@/lib/db/ensure")
+    await ensureDeliveryColumns()
+    const r = await pool.query(
+      `INSERT INTO rate_limits (key, window_start, hits) VALUES ($1, now(), 1)
+       ON CONFLICT (key) DO UPDATE SET
+         hits = CASE WHEN rate_limits.window_start < now() - make_interval(secs => $2) THEN 1 ELSE rate_limits.hits + 1 END,
+         window_start = CASE WHEN rate_limits.window_start < now() - make_interval(secs => $2) THEN now() ELSE rate_limits.window_start END
+       RETURNING hits`,
+      [key, windowMs / 1000],
+    )
+    return Number(r.rows[0]?.hits ?? 0) > limit
+  } catch {
+    return false
+  }
+}
+
 export function clientIp(req: Request) {
   return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
 }

@@ -13,9 +13,6 @@ const CONFIG = {
     privat: { name: "ПриватБанк", short: "Карта Приват", note: "Переказ на карту", currency: "UAH", details: "5168 7521 1703 7047" },
     crypto: { name: "Крипта USDT (TRC20)", short: "USDT", note: "Без комісії банку", currency: "USDT", details: "TD3okxejs9zbeMELTBusYBeeXCUYZkndhE" },
     mono: { name: "Monobank", short: "Карта Mono", note: "Переказ на карту / банку", currency: "UAH", details: "Банка: https://send.monobank.ua/ (вкажи свою)", available: false, status: "В розробці" },
-    casebal: { name: "Депозит Case Bal", short: "Case Bal", note: "Поповнення балансом / депозит-кодом", currency: "UAH", details: "Нік адміна для передачі: EvilverseAdmin", available: false, status: "В розробці" },
-    sbp: { name: "СБП", short: "СБП", note: "Переказ за номером телефону", currency: "RUB", details: "—", available: false, status: "Тимчасово недоступно" },
-    rucard: { name: "Картка РФ", short: "Картка РФ", note: "Переказ на карту російського банку", currency: "RUB", details: "—", available: false, status: "Тимчасово недоступно" },
   },
   TOKEN_RATE: 5, // 1 грн = 5 фішок
 };
@@ -851,6 +848,7 @@ const ORDER_ERRORS = {
   bad_discord: "Вкажи свій Discord",
   bad_method: "Обери доступний спосіб оплати",
   bad_promo: "Такого промокоду не існує",
+  promo_used: "Цей промокод ти вже використав — він діє один раз на нік",
   one_sub_only: "Одна підписка Prime на замовлення",
   pay_unavailable: "Цей спосіб оплати тимчасово недоступний — обери інший",
   bad_prefix: "Префікс: до 10 символів — лише літери, цифри, пробіл, _ та -",
@@ -981,7 +979,6 @@ function tonPayUrl(m, o) {
 function showPayment(o) {
   const m = CONFIG.PAYMENTS[o.method] || { name: o.method, details: "" };
   const steps = {
-    casebal: [`Зайди на сайт Case Bal та поповни баланс / створи депозит-код на <b>${moneyFor(o.total, o.method)}</b>`, `Передай депозит на акаунт адміністрації (${esc(m.details)})`, "Зроби скріншот підтвердження"],
     mono: m.auto
       ? ["Натисни «Оплатити» — відкриється банка monobank. Підходить будь-яка картка, Apple Pay чи Google Pay", `Сума: <b>${moneyFor(o.total, o.method)}</b>`, `У коментарі до платежу встав код <b>${o.code}</b> — без нього оплата не зарахується автоматично`, "Товар прийде в гру сам протягом 1–2 хвилин після оплати. Статус видно у вкладці «Кабінет»"]
       : [`Переведи <b>${moneyFor(o.total, o.method)}</b> за реквізитами нижче`, `У коментарі вкажи код <b>${o.code}</b>`, "Збережи квитанцію"],
@@ -991,8 +988,6 @@ function showPayment(o) {
     ton: [`Надішли рівно <b>${o.payAmount} USDT</b> у мережі <b>TON</b> — з Telegram Wallet, Tonkeeper чи іншого гаманця TON`, "Адресу й суму скопіюй вище або натисни «Відкрити в гаманці» — усе заповниться само", `У коментарі (Comment / Memo) встав код <b>${o.code}</b> — без нього оплата не зарахується автоматично`, "Товар прийде в гру сам за 1–2 хвилини після підтвердження переказу. Статус видно у вкладці «Кабінет»"],
     crypto: m.auto && o.payAmount ? [`Надішли рівно <b>${o.payAmount} USDT</b> у мережі <b>TRC20 (TRON)</b> на адресу вище`, "Сума — саме така, до тисячних: за нею сайт впізнає твій платіж (коментар у TRON не передається)", "Платиш з біржі (Binance тощо)? Вкажи суму так, щоб після комісії біржі на адресу дійшло рівно стільки", "Товар прийде в гру сам за 1–3 хвилини після підтвердження переказу. Статус видно у вкладці «Кабінет»"]
       : [`Відправ еквівалент <b>${moneyFor(o.total, o.method)}</b> у USDT (мережа TRC20)`, "Перевір мережу — інша мережа = втрата коштів", "Збережи хеш транзакції (TxID)"],
-    sbp: [`Переведи еквівалент <b>${moneyFor(o.total, o.method)}</b> у рублях за реквізитами нижче`, `У коментарі вкажи код <b>${o.code}</b>`, "Збережи квитанцію"],
-    rucard: [`Переведи еквівалент <b>${moneyFor(o.total, o.method)}</b> у рублях на карту нижче`, `У коментарі вкажи код <b>${o.code}</b>`, "Збережи квитанцію"],
   }[o.method];
   openModal(`
     <div class="success-icon">✓</div>

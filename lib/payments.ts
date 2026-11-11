@@ -21,6 +21,7 @@ async function cancelStale() {
       `UPDATE orders SET status = 'cancelled', payment_log = COALESCE(payment_log, '[]'::jsonb) || '["скасовано автоматично: не оплачено 7 днів"]'::jsonb
        WHERE status = 'pending' AND created_at < now() - interval '7 days'`,
     )
+    await pool.query("DELETE FROM rate_limits WHERE window_start < now() - interval '1 day'")
   } catch (error) {
     console.error("[stale-cancel]", error)
   }

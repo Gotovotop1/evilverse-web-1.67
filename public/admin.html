@@ -162,6 +162,8 @@
           o.status === "pending" ? `<button class="bad" data-act="cancelled" data-code="${esc(o.code)}">✖ Скасувати</button>` : "",
           o.status === "paid" && (o.deliveryStatus === "failed" || o.deliveryStatus === "manual")
             ? `<button data-act="redeliver" data-code="${esc(o.code)}">↻ Повторити видачу</button>` : "",
+          o.status === "paid" && o.method !== "free"
+            ? `<button data-act="${o.isDemo ? "demo-off" : "demo-on"}" data-code="${esc(o.code)}" title="Тестові замовлення не показуються в стрічці покупок і топі донатерів">${o.isDemo ? "↩ Не тестове" : "🙈 Тестове"}</button>` : "",
           o.status === "paid" && o.method === "stars" && (o.paymentLog || []).some((l) => l.startsWith("Telegram Stars: +"))
             ? `<button class="bad" data-act="refund-stars" data-code="${esc(o.code)}">↩ Повернути зірки</button>` : "",
         ].join("");
@@ -169,6 +171,7 @@
           <div class="top">
             <span class="code">${esc(o.code)}</span>
             <span class="badge b-${esc(o.status)}">${esc(STATUS[o.status] || o.status)}</span>
+            ${o.isDemo ? `<span class="badge">тест</span>` : ""}
             ${delivery}
             <span class="grow"></span>
             <span class="muted">${esc(new Date(o.createdAt).toLocaleString("uk-UA"))}</span>
@@ -220,6 +223,9 @@
         const note = prompt(`Причина відмови для ${code} (необов'язково). Гроші за платний префікс повертаєш вручну.`, "");
         if (note === null) return;
         payload = { code, prefix: "reject", note };
+      } else if (act === "demo-on" || act === "demo-off") {
+        if (act === "demo-on" && !confirm(`Позначити ${code} як тестове? Воно зникне зі стрічки покупок і топу донатерів (а якщо ще не видане — не видасться на сервер).`)) return;
+        payload = { code, demo: act === "demo-on" };
       } else if (act === "refund-stars") {
         if (!confirm(`Повернути зірки за ${code}? Telegram поверне їх гравцю, замовлення стане скасованим.\nЯкщо товар уже видано в грі — забери його вручну.`)) return;
         payload = { code, refundStars: true };

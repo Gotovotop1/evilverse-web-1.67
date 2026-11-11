@@ -62,6 +62,8 @@ export function ensureDeliveryColumns() {
         created_at timestamptz NOT NULL DEFAULT now()
       );
       CREATE TABLE IF NOT EXISTS app_kv (key text PRIMARY KEY, value text NOT NULL);
+      -- Лічильник захисту від спаму (замовлення, заявки) — спільний для всіх копій сайту на Vercel
+      CREATE TABLE IF NOT EXISTS rate_limits (key text PRIMARY KEY, window_start timestamptz NOT NULL, hits integer NOT NULL);
     `)
     .then(() => undefined)
     .catch((error) => {
