@@ -1040,7 +1040,7 @@ function fieldHTML(f) {
   const id = `f_${f.id}`;
   const req = f.type !== "checkbox" ? ' <span class="req">*</span>' : "";
   let input;
-  if (f.type === "textarea") input = `<textarea id="${id}" name="${f.id}" data-min="${f.min || 0}" placeholder="${esc(f.placeholder || "Пиши розгорнуто...")}"></textarea><span class="counter" data-for="${id}">0 / ${f.min || 0}</span>`;
+  if (f.type === "textarea") input = `<textarea id="${id}" name="${f.id}" maxlength="3000" data-min="${f.min || 0}" placeholder="${esc(f.placeholder || "Пиши розгорнуто...")}"></textarea><span class="counter" data-for="${id}">0 / ${f.min || 0}</span>`;
   else if (f.type === "select") input = `<select id="${id}" name="${f.id}"><option value="">— Обери —</option>${f.options.map((o) => `<option>${esc(o)}</option>`).join("")}</select>`;
   else if (f.type === "checkbox") return `<div class="field full" data-field="${f.id}"><label class="checkbox"><input type="checkbox" id="${id}" name="${f.id}" /> <span>${esc(f.label)}</span></label><span class="err"></span></div>`;
   else input = `<input id="${id}" name="${f.id}" type="${f.type === "number" ? "number" : f.type === "url" ? "url" : "text"}" ${f.minVal != null ? `min="${f.minVal}"` : ""} ${f.maxVal != null ? `max="${f.maxVal}"` : ""} placeholder="${esc(f.placeholder || "")}" />`;
