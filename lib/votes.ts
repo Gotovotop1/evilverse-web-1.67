@@ -84,7 +84,20 @@ export async function acceptVote(siteId: string, params: Params): Promise<VoteRe
   if (!v) return "bad_signature"
   if (!NICK_RE.test(v.nick ?? "")) return "bad_nick"
   if (tooOld(v.time)) return "stale"
+  return recordVote(siteId, site.name, v.nick)
+}
 
+/** Голос, принятый сервером через Votifier (мониторинги без HTTP-скрипта, напр. MinecraftRating). */
+export async function acceptServerVote(service: string, nick: string): Promise<VoteResult> {
+  // «MinecraftRating» / «minecraftrating.ru» → minecraftrating, «McTOP» → mctop (зона домена отрезается только после точки)
+  const siteId = service.toLowerCase().trim().replace(/\.[a-z]{2,6}$/, "").replace(/[^a-z0-9]/g, "").slice(0, 32) || "votifier"
+  if (!NICK_RE.test(nick)) return "bad_nick"
+  return recordVote(siteId, service.slice(0, 40) || siteId, nick)
+}
+
+async function recordVote(siteId: string, siteName: string, nick: string): Promise<VoteResult> {
+  const v = { nick }
+  const site = { name: siteName }
   await ensureDeliveryColumns()
   const day = kyivDay()
   const client = await pool.connect()
