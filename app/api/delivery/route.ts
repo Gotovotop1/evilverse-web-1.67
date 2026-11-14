@@ -5,6 +5,7 @@ import { ensureDeliveryColumns } from "@/lib/db/ensure"
 import { orders } from "@/lib/db/schema"
 import { sendDiscordWebhook } from "@/lib/server-utils"
 import { checkPayments } from "@/lib/payments"
+import { awardMonthlyTopVoters } from "@/lib/votes"
 
 export const dynamic = "force-dynamic"
 
@@ -31,6 +32,8 @@ export async function GET(req: Request) {
   await ensureDeliveryColumns()
   // Сервер опитує сайт кожні ~15 с — заодно перевіряємо автоматичні оплати (monobank, USDT TON)
   await checkPayments()
+  // 1-го числа — призи топ-3 голосуючих минулого місяця (один раз на місяць)
+  await awardMonthlyTopVoters().catch((error) => console.error("[votes] monthly top", error))
   const rows = await db
     .select({ code: orders.code, nick: orders.nick, giftTo: orders.giftTo, items: orders.items, prefixStatus: orders.prefixStatus })
     .from(orders)

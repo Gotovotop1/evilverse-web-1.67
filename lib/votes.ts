@@ -147,3 +147,62 @@ export async function topVoters(limit = 10) {
   )
   return { month, top: r.rows as { nick: string; votes: number }[] }
 }
+
+/* ── Призи топ-3 голосуючих за місяць ──────────────────────────────────────
+ * 1-го числа (за Києвом) топ-3 минулого місяця отримують замовлення vote_top1..3,
+ * а що саме видати (підписки на 14 днів) — вирішує config.yml HellPrime, як і для інших товарів.
+ * Видача рівно один раз на місяць: прапорець у app_kv ставиться в тій самій транзакції.
+ * Викликається з /api/delivery (сервер опитує сайт кожні ~15 с), окремий cron не потрібен.
+ */
+const TOP_PRIZES = ["vote_top1", "vote_top2", "vote_top3"]
+let awardedMonth = ""
+
+function previousMonth(): string {
+  const [y, m] = kyivDay().slice(0, 7).split("-").map(Number)
+  return new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 7)
+}
+
+export async function awardMonthlyTopVoters(): Promise<string[]> {
+  const month = previousMonth()
+  if (awardedMonth === month) return []
+  await ensureDeliveryColumns()
+  const client = await pool.connect()
+  try {
+    await client.query("BEGIN")
+    const flag = await client.query(
+      `INSERT INTO app_kv (key, value) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING key`,
+      [`vote_top_awarded:${month}`, new Date().toISOString()],
+    )
+    if (!flag.rowCount) {
+      await client.query("ROLLBACK")
+      awardedMonth = month
+      return []
+    }
+    const top = await client.query(
+      `SELECT min(nick) AS nick, count(*)::int AS votes FROM votes WHERE day LIKE $1
+       GROUP BY lower(nick) ORDER BY votes DESC, min(created_at) ASC LIMIT 3`,
+      [`${month}-%`],
+    )
+    const codes: string[] = []
+    for (let i = 0; i < top.rows.length; i++) {
+      const { nick, votes } = top.rows[i] as { nick: string; votes: number }
+      if (!NICK_RE.test(nick)) continue
+      const code = `VTOP-${randomBytes(4).toString("hex").toUpperCase()}`
+      await client.query(
+        `INSERT INTO orders (code, nick, discord, method, items, subtotal, discount, total, status, paid_at, payment_log)
+         VALUES ($1, $2, '-', 'vote', $3, 0, 0, 0, 'paid', now(), $4)`,
+        [code, nick, JSON.stringify([{ id: TOP_PRIZES[i], dur: "", qty: 1, unit: 0 }]),
+          JSON.stringify([`топ-${i + 1} голосуючих за ${month}: ${votes} голосів`])],
+      )
+      codes.push(code)
+    }
+    await client.query("COMMIT")
+    awardedMonth = month
+    return codes
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {})
+    throw error
+  } finally {
+    client.release()
+  }
+}
