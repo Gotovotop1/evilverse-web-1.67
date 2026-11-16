@@ -1,3 +1,9 @@
+/*!
+ * EvilVerse Studio — генератор промо-роликов для медиа.
+ * © 2026 EvilVerse (evilverse.lol). Все права защищены.
+ * Проприетарное ПО: копирование, изменение, распространение и использование
+ * вне evilverse.lol без письменного разрешения запрещены. См. LICENSE.txt.
+ */
 // Адская сцена EvilVerse (scene2 + scene3), рисует кадр по времени: window.render(t)
 
 // Универсальная адская сцена: window.TL = {dur, items:[{start,end,scene,caps,...}]}

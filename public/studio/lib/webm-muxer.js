@@ -1,3 +1,4 @@
+/*! webm-muxer 5.1.4 — © Vanilagy, MIT License — https://github.com/Vanilagy */
 "use strict";
 var WebMMuxer = (() => {
   var __defProp = Object.defineProperty;
