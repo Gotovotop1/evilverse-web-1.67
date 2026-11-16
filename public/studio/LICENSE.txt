@@ -1,5 +1,7 @@
 EvilVerse Studio
-© 2026 EvilVerse (https://evilverse.lol). Все права защищены.
+© 2026 EvilVerse (https://evilverse.lol). Все права защищены. All rights reserved.
+Идея, концепция и реализация EvilVerse Studio принадлежат EvilVerse.
+Дата фиксации: 16.11.2026. Подробно: AUTHORSHIP.md.
 
 ПРОПРИЕТАРНАЯ ЛИЦЕНЗИЯ
 
