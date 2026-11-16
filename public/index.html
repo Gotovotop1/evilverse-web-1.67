@@ -13,6 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/style.css" />
+<style>.nav-studio{color:#FFA31A!important}.nav-studio:hover{color:#FF5A1F!important}.studio-callout{display:flex;align-items:center;gap:14px;margin:0 0 22px;padding:14px 16px;border:1px solid #5a2412;border-radius:10px;background:linear-gradient(90deg,rgba(255,163,26,.10),rgba(255,90,31,.05));color:#f6ebe5;text-decoration:none;transition:border-color .2s}.studio-callout:hover{border-color:#FF5A1F}.studio-callout-icon{font-size:26px;background:linear-gradient(90deg,#FFA31A,#FF5A1F);-webkit-background-clip:text;background-clip:text;color:transparent}.studio-callout-text{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}.studio-callout-text span{color:#C9A58B;font-size:14px}.studio-callout-btn{background:linear-gradient(90deg,#FFA31A,#FF5A1F);color:#1a0605;font-weight:700;white-space:nowrap}@media(max-width:640px){.studio-callout{flex-wrap:wrap}.studio-callout-btn{width:100%;text-align:center}}</style>
 </head>
 <body>
   <canvas id="embers" aria-hidden="true"></canvas>
@@ -32,6 +33,7 @@
         <a href="#faq" data-tab="faq" class="nav-link">FAQ</a>
         <a href="#top" data-tab="top" class="nav-link">Топ</a>
         <a href="#profile" data-tab="profile" class="nav-link">Кабінет</a>
+        <a href="/studio" class="nav-link nav-studio" title="Генератор відео для медійників">Студія</a>
       </nav>
 
       <div class="topbar-actions">
@@ -198,6 +200,12 @@
           <p class="muted">Обери посаду. Заповнюй чесно та розгорнуто — відписки по одному слову відхиляються автоматично.</p>
         </div>
 
+        <a class="studio-callout" href="/studio">
+          <span class="studio-callout-icon" aria-hidden="true">✹</span>
+          <span class="studio-callout-text"><b>Студія відео для медійників</b><span>Готові ролики для TikTok, Shorts і Reels з твоїм ніком і промокодом — за хвилину, прямо в браузері.</span></span>
+          <span class="btn btn-sm studio-callout-btn">Відкрити</span>
+        </a>
+
         <div class="roles" id="roles"></div>
 
         <div class="apply-wrap" id="applyWrap" hidden>
@@ -285,6 +293,7 @@
         <a href="#apply" data-tab="apply">Заявки</a>
         <a href="#rules" data-tab="rules">Правила</a>
         <a href="#top" data-tab="top">Топ гравців</a>
+        <a href="/studio">Студія відео</a>
         <a href="https://discord.gg/8eHG2YsePC" target="_blank" rel="noopener">Discord</a>
       </div>
       <p class="muted small">EVILVERSE не пов&apos;язаний з Mojang AB. © <span id="year"></span></p>
