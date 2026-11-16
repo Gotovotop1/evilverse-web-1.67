@@ -8,8 +8,14 @@ const nextConfig = {
   },
   async rewrites() {
     return {
-      beforeFiles: [{ source: '/', destination: '/index.html' }, { source: '/studio', destination: '/studio/index.html' }, { source: '/studio/', destination: '/studio/index.html' }],
+      beforeFiles: [{ source: '/', destination: '/index.html' }],
     }
+  },
+  async redirects() {
+    return [
+      { source: '/studio', destination: 'https://studio.evilverse.lol/', permanent: true },
+      { source: '/studio/:path*', destination: 'https://studio.evilverse.lol/:path*', permanent: true },
+    ]
   },
   async headers() {
     return [
