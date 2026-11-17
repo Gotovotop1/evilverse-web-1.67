@@ -1,6 +1,6 @@
 import { pool } from "@/lib/db"
 import { authed, fail, json, preflight, siteUrl } from "@/lib/studio/core"
-import { storageMode } from "@/lib/studio/storage"
+import { blobUploader, storageMode } from "@/lib/studio/storage"
 
 export const dynamic = "force-dynamic"
 export const OPTIONS = preflight
@@ -23,11 +23,11 @@ export const POST = authed(async (req, u) => {
     const r = await pool.query(`INSERT INTO studio_videos (user_id, url, size, duration, mime, title) VALUES ($1, '', $2, $3, $4, $5) RETURNING id`,
       [u.id, size, duration, mime, String(b.title || "").slice(0, 200) || null])
     const id = r.rows[0].id, ext = mime === "video/webm" ? "webm" : "mp4", name = `${id}-${Math.random().toString(36).slice(2, 10)}.${ext}`
-    return json(req, { id: String(id), mode, ...(mode === "local" ? { putUrl: `${siteUrl(req)}/api/studio/local-blob/${name}` } : { pathname: `studio/${u.id}/${name}`, handleUploadUrl: `${siteUrl(req)}/api/studio/blob` }) })
+    return json(req, { id: String(id), mode, ...(mode === "local" ? { putUrl: `${siteUrl(req)}/api/studio/local-blob/${name}` } : { pathname: `studio/${u.id}/${name}`, handleUploadUrl: `${siteUrl(req)}/api/studio/blob`, uploader: blobUploader() }) })
   }
   if (b.action === "finish") {
     const id = Number(b.id), url = String(b.url || "")
-    const okUrl = mode === "local" ? url.includes("/api/studio/local-blob/" + id + "-") : /^https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/studio\//.test(url)
+    const okUrl = mode === "local" ? url.includes("/api/studio/local-blob/" + id + "-") : /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\/studio\/\d+\//.test(url) && url.includes(`/studio/${u.id}/${id}-`)
     if (!okUrl) return fail(req, "Неверный адрес файла")
     const r = await pool.query(`UPDATE studio_videos SET url = $1 WHERE id = $2 AND user_id = $3 AND (url = '' OR url = $1) RETURNING id`, [url, id, u.id])
     if (!r.rows[0]) return fail(req, "Ролик не найден", 404)

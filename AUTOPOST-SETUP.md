@@ -27,7 +27,7 @@
 
 `DATABASE_URL` уже есть — используется та же база Postgres.
 
-**Хранилище роликов:** Vercel → проект сайта → **Storage → Create → Blob** → подключить к проекту. Переменная `BLOB_READ_WRITE_TOKEN` появится сама. Бесплатного лимита хватит: ролик живёт в хранилище только до публикации и ещё сутки.
+**Хранилище роликов:** Vercel → проект сайта → **Storage → Create Storage → Blob** (Public) → подключить к проекту. Новые хранилища добавляют переменные `BLOB_STORE_ID` и `BLOB_WEBHOOK_PUBLIC_KEY` (загрузка подписывается через OIDC Vercel, постоянного ключа нет). Старые — `BLOB_READ_WRITE_TOKEN`. Сайт понимает оба варианта. Бесплатного лимита хватит: ролик живёт в хранилище только до публикации и ещё сутки.
 
 **Расписание (раз в 10 минут):** GitHub → репозиторий сайта → **Settings → Secrets and variables → Actions → New repository secret**:
 - `STUDIO_CRON_URL` = `https://shop.evilverse.lol/api/studio/cron`

@@ -10,7 +10,9 @@ import path from "node:path"
 import { env } from "./core"
 
 export const storageMode = (): "blob" | "local" | null =>
-  env("STUDIO_STORAGE") === "local" ? "local" : env("BLOB_READ_WRITE_TOKEN") ? "blob" : null
+  env("STUDIO_STORAGE") === "local" ? "local" : env("BLOB_READ_WRITE_TOKEN") || env("BLOB_STORE_ID") ? "blob" : null
+/** Новые хранилища Vercel Blob работают без постоянного ключа: загрузка подписывается через OIDC (BLOB_STORE_ID). */
+export const blobUploader = (): "presigned" | "token" => (env("BLOB_READ_WRITE_TOKEN") ? "token" : "presigned")
 
 const DIR = () => env("STUDIO_LOCAL_DIR") || "/tmp/evs-studio-blobs"
 const safe = (name: string) => name.replace(/[^\w.-]/g, "").slice(0, 120)
