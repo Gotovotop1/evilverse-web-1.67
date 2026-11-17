@@ -16,4 +16,4 @@ jobs:
           KEY: ${{ secrets.CRON_SECRET }}
         run: |
           if [ -z "$URL" ] || [ -z "$KEY" ]; then echo "секреты не заданы — пропускаю"; exit 0; fi
-          curl -sS -m 70 --retry 2 -H "Authorization: Bearer $KEY" "$URL"
+          curl -sS --fail-with-body -m 70 --retry 2 -H "Authorization: Bearer $KEY" "$URL"

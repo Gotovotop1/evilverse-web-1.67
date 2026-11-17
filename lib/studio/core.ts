@@ -96,6 +96,7 @@ export function ensureStudioTables() {
       updated_at timestamptz NOT NULL DEFAULT now()
     );
     ALTER TABLE studio_social ADD COLUMN IF NOT EXISTS broken text;
+    ALTER TABLE studio_users ADD COLUMN IF NOT EXISTS discord_id text UNIQUE;
     CREATE INDEX IF NOT EXISTS studio_posts_due ON studio_posts (status, scheduled_at);
     CREATE INDEX IF NOT EXISTS studio_posts_user ON studio_posts (user_id, scheduled_at);
   `).then(() => undefined).catch((e) => { ready = null; throw e })
@@ -167,16 +168,16 @@ export async function useTicket(t: string | null) {
 }
 
 /** Находит или создаёт пользователя по одному из способов входа. */
-export async function upsertUser(by: "email" | "google_sub" | "telegram_id", value: string, extra: { email?: string | null; name?: string | null; avatar?: string | null } = {}) {
+export async function upsertUser(by: "email" | "google_sub" | "telegram_id" | "discord_id", value: string, extra: { email?: string | null; name?: string | null; avatar?: string | null } = {}) {
   await ensureStudioTables()
   const found = await pool.query(`SELECT * FROM studio_users WHERE ${by} = $1`, [value])
   if (found.rows[0]) {
     await pool.query(`UPDATE studio_users SET name = COALESCE($2, name), avatar = COALESCE($3, avatar) WHERE id = $1`, [found.rows[0].id, extra.name ?? null, extra.avatar ?? null])
     return found.rows[0]
   }
-  // вход через Google с почтой, на которую уже есть аккаунт, — это тот же человек
-  if (by === "google_sub" && extra.email) {
-    const same = await pool.query(`UPDATE studio_users SET google_sub = $2, name = COALESCE(name, $3), avatar = COALESCE(avatar, $4) WHERE email = $1 RETURNING *`, [extra.email, value, extra.name ?? null, extra.avatar ?? null])
+  // вход через Google или Discord с подтверждённой почтой, на которую уже есть аккаунт, — это тот же человек
+  if ((by === "google_sub" || by === "discord_id") && extra.email) {
+    const same = await pool.query(`UPDATE studio_users SET ${by} = $2, name = COALESCE(name, $3), avatar = COALESCE(avatar, $4) WHERE email = $1 AND ${by} IS NULL RETURNING *`, [extra.email, value, extra.name ?? null, extra.avatar ?? null])
     if (same.rows[0]) return same.rows[0]
   }
   const email = by === "email" ? value : extra.email ?? null

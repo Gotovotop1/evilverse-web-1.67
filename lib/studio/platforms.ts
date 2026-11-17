@@ -5,6 +5,7 @@
  *   TikTok     — Login Kit + Content Posting API (Direct Post, загрузка файла с сервера)
  *   YouTube    — Google OAuth + YouTube Data API v3 (resumable upload, Shorts)
  *   Instagram  — Instagram API with Instagram Login (Reels через контейнер и media_publish)
+ *   Discord    — только вход в студию (OAuth2, scopes identify email)
  *
  * Все адреса можно переопределить переменными окружения (нужно для тестового стенда).
  */
@@ -253,6 +254,34 @@ function igError(status: number, j: any) {
   if (e.code === 9 || e.code === 4 || e.code === 32 || status === 429) return new PlatformError("Instagram ограничил публикации на время, повторю позже", true, 60)
   if (status >= 500) return new PlatformError("Instagram временно недоступен: " + msg, true)
   return new PlatformError("Instagram: " + msg)
+}
+
+// =====================================================================================
+// Discord: только вход в студию
+// =====================================================================================
+const D_AUTH = () => base("DISCORD_AUTH_URL", "https://discord.com/oauth2/authorize")
+const D_API = () => base("DISCORD_API_BASE", "https://discord.com/api/v10")
+const D_CDN = () => base("DISCORD_CDN_BASE", "https://cdn.discordapp.com")
+
+export const discord = {
+  configured: () => !!(env("DISCORD_CLIENT_ID") && env("DISCORD_CLIENT_SECRET")),
+  authUrl(state: string, redirectUri: string) {
+    const p = new URLSearchParams({ client_id: env("DISCORD_CLIENT_ID"), redirect_uri: redirectUri, response_type: "code", scope: "identify email", state, prompt: "none" })
+    return `${D_AUTH()}?${p}`
+  },
+  async exchange(code: string, redirectUri: string): Promise<Account> {
+    const r = await fetch(`${D_API()}/oauth2/token`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: form({ code, client_id: env("DISCORD_CLIENT_ID"), client_secret: env("DISCORD_CLIENT_SECRET"), redirect_uri: redirectUri, grant_type: "authorization_code" }) })
+    const j = await readJson(r)
+    if (!r.ok || !j.access_token) throw new PlatformError("Discord не выдал доступ: " + (j.error_description || j.error || r.status))
+    const u = await readJson(await fetch(`${D_API()}/users/@me`, { headers: { Authorization: `Bearer ${j.access_token}` } }))
+    if (!u.id) throw new PlatformError("Discord не вернул профиль")
+    // токен Discord дальше не нужен — отзываем, чтобы не висел
+    fetch(`${D_API()}/oauth2/token/revoke`, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: form({ token: j.access_token, token_type_hint: "access_token", client_id: env("DISCORD_CLIENT_ID"), client_secret: env("DISCORD_CLIENT_SECRET") }) }).catch(() => {})
+    const avatar = u.avatar ? `${D_CDN()}/avatars/${u.id}/${u.avatar}.${String(u.avatar).startsWith("a_") ? "gif" : "png"}?size=128` : null
+    return { id: String(u.id), name: u.global_name || u.username || null, avatar, email: u.verified && u.email ? String(u.email).toLowerCase() : null }
+  },
 }
 
 export const PLATFORMS = { tiktok, youtube: google, instagram } as const

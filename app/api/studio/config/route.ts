@@ -1,5 +1,5 @@
 import { env, handler, json, preflight, secretOk } from "@/lib/studio/core"
-import { platformConfigured } from "@/lib/studio/platforms"
+import { discord, platformConfigured } from "@/lib/studio/platforms"
 import { storageMode } from "@/lib/studio/storage"
 
 export const dynamic = "force-dynamic"
@@ -12,6 +12,7 @@ export async function GET(req: Request) {
     enabled: ready,
     login: {
       google: ready && platformConfigured("youtube"),
+      discord: ready && discord.configured(),
       telegram: ready && env("TELEGRAM_BOT_TOKEN") && env("TELEGRAM_LOGIN_BOT") ? env("TELEGRAM_LOGIN_BOT").replace(/^@/, "") : null,
       // номер бота (часть ключа до двоеточия, не секрет) — для своей кнопки «Войти через Telegram» в студии
       telegramId: ready && env("TELEGRAM_LOGIN_BOT") && /^\d+:/.test(env("TELEGRAM_BOT_TOKEN")) ? Number(env("TELEGRAM_BOT_TOKEN").split(":")[0]) : null,

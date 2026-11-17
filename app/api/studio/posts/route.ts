@@ -12,7 +12,7 @@ const YT_PRIVACY = ["public", "unlisted", "private"]
 
 /** Мои публикации (последние 200) + заодно выкладываем то, чьё время уже пришло. */
 export const GET = authed(async (req, u) => {
-  if (new URL(req.url).searchParams.get("run") === "1") await processDue({ userId: u.id, limit: 3, budgetMs: 25_000 }).catch((e) => console.error(e))
+  if (new URL(req.url).searchParams.get("run") === "1") await processDue({ userId: u.id, limit: 2, budgetMs: 15_000 }).catch((e) => console.error(e))
   const r = await pool.query(
     `SELECT p.id, p.video_id, p.platform, p.title, p.caption, p.privacy, p.scheduled_at, p.status, p.attempts, p.remote_url, p.error, p.updated_at,
             v.url AS video_url, v.deleted_at IS NOT NULL AS video_deleted, v.duration, v.title AS video_title
