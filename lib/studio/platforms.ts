@@ -151,24 +151,21 @@ export const tiktok = {
     if (!privacy) throw new PlatformError("TikTok сейчас не разрешает этому аккаунту публиковать видео")
     if (info.max_video_post_duration_sec && video.duration && video.duration > info.max_video_post_duration_sec)
       throw new PlatformError(`ролик длиннее, чем разрешено аккаунту (${info.max_video_post_duration_sec} с)`)
-    const bytes = await fetchVideo(video), size = bytes.length
-    // до 64 МБ — одним куском; больше — кусками по 10 МБ, последний забирает остаток
-    const chunk = size <= 64 * 1048576 ? size : 10 * 1048576, count = size <= 64 * 1048576 ? 1 : Math.floor(size / chunk)
-    const r = await fetch(`${TT_API()}/v2/post/publish/video/init/`, { method: "POST", headers: ttHeaders(access), body: JSON.stringify({
-      post_info: { title: post.caption.slice(0, 2200), privacy_level: privacy, disable_duet: false, disable_comment: false, disable_stitch: false,
-        video_cover_timestamp_ms: 1000, brand_content_toggle: false, brand_organic_toggle: false },
-      source_info: { source: "FILE_UPLOAD", video_size: size, chunk_size: chunk, total_chunk_count: count },
-    }) })
-    const j = await readJson(r)
-    if (!r.ok || (j.error?.code && j.error.code !== "ok")) throw ttError(r.status, j)
-    const { publish_id, upload_url } = j.data ?? {}
-    if (!publish_id || !upload_url) throw new PlatformError("TikTok не дал адрес загрузки", true)
-    for (let i = 0; i < count; i++) {
-      const from = i * chunk, to = i === count - 1 ? size : from + chunk
-      const up = await fetch(upload_url, { method: "PUT", headers: { "Content-Type": video.mime || "video/mp4", "Content-Length": String(to - from), "Content-Range": `bytes ${from}-${to - 1}/${size}` }, body: bytes.subarray(from, to) })
-      if (!up.ok && up.status !== 206) throw new PlatformError(`TikTok не принял файл (${up.status})`, true)
+    const bytes = await fetchVideo(video)
+    let up
+    try {
+      up = await ttUpload(access, "/v2/post/publish/video/init/", bytes, video, {
+        title: post.caption.slice(0, 2200), privacy_level: privacy, disable_duet: false, disable_comment: false, disable_stitch: false,
+        video_cover_timestamp_ms: 1000, brand_content_toggle: false, brand_organic_toggle: false })
+    } catch (e: any) {
+      if (e?.ttCode !== "unaudited_client_can_only_post_to_private_accounts") throw e
+      // пока TikTok не проверил приложение, публичный аккаунт не принимает прямую публикацию — отправляем черновиком во входящие TikTok
+      let draft
+      try { draft = await ttUpload(access, "/v2/post/publish/inbox/video/init/", bytes, video, null) }
+      catch { throw new PlatformError("пока приложение не прошло проверку TikTok, публиковать можно только в закрытый (приватный) аккаунт, а черновик TikTok не принял. Сделай аккаунт закрытым и нажми «Повторить»") }
+      return { state: "processing", remoteId: draft, note: "TikTok пока не даёт публиковать сразу (приложение на проверке) — отправляю ролик черновиком во входящие TikTok" }
     }
-    return { state: "processing", remoteId: publish_id, note: privacy === "SELF_ONLY" ? "видно только тебе (так TikTok разрешает до проверки приложения)" : null }
+    return { state: "processing", remoteId: up, note: privacy === "SELF_ONLY" ? "видно только тебе (так TikTok разрешает до проверки приложения)" : null }
   },
   async poll(post: PostRow, access: string): Promise<PublishResult | null> {
     const r = await fetch(`${TT_API()}/v2/post/publish/status/fetch/`, { method: "POST", headers: ttHeaders(access), body: JSON.stringify({ publish_id: post.remote_id }) })
@@ -178,13 +175,34 @@ export const tiktok = {
     if (st === "PUBLISH_COMPLETE" || st === "SEND_TO_USER_INBOX") {
       const id = j.data?.publicaly_available_post_id?.[0]
       return { state: "published", remoteId: id ? String(id) : post.remote_id, remoteUrl: id ? `https://www.tiktok.com/video/${id}` : null,
-        note: st === "SEND_TO_USER_INBOX" ? "черновик ждёт тебя во входящих TikTok" : id ? null : post.privacy === "SELF_ONLY" ? "опубликовано приватно — видно только тебе в профиле TikTok" : "опубликовано, ссылка появится после модерации TikTok" }
+        note: st === "SEND_TO_USER_INBOX" ? "черновик во входящих TikTok: открой TikTok → уведомление «Входящие» → вставь описание (кнопка «Описание») и опубликуй" : id ? null : post.privacy === "SELF_ONLY" ? "опубликовано приватно — видно только тебе в профиле TikTok" : "опубликовано, ссылка появится после модерации TikTok" }
     }
     if (st === "FAILED") throw new PlatformError("TikTok отклонил ролик: " + (j.data?.fail_reason || "без причины"))
     return null // ещё обрабатывается
   },
 }
+/** Загрузка файла в TikTok (прямая публикация или черновик во входящие). Возвращает publish_id. */
+async function ttUpload(access: string, path: string, bytes: Uint8Array, video: VideoRow, postInfo: Record<string, unknown> | null) {
+  const size = bytes.length
+  // до 64 МБ — одним куском; больше — кусками по 10 МБ, последний забирает остаток
+  const chunk = size <= 64 * 1048576 ? size : 10 * 1048576, count = size <= 64 * 1048576 ? 1 : Math.floor(size / chunk)
+  const r = await fetch(`${TT_API()}${path}`, { method: "POST", headers: ttHeaders(access), body: JSON.stringify({
+    ...(postInfo ? { post_info: postInfo } : {}), source_info: { source: "FILE_UPLOAD", video_size: size, chunk_size: chunk, total_chunk_count: count } }) })
+  const j = await readJson(r)
+  if (!r.ok || (j.error?.code && j.error.code !== "ok")) throw ttError(r.status, j)
+  const { publish_id, upload_url } = j.data ?? {}
+  if (!publish_id || !upload_url) throw new PlatformError("TikTok не дал адрес загрузки", true)
+  for (let i = 0; i < count; i++) {
+    const from = i * chunk, to = i === count - 1 ? size : from + chunk
+    const up = await fetch(upload_url, { method: "PUT", headers: { "Content-Type": video.mime || "video/mp4", "Content-Length": String(to - from), "Content-Range": `bytes ${from}-${to - 1}/${size}` }, body: bytes.subarray(from, to) })
+    if (!up.ok && up.status !== 206) throw new PlatformError(`TikTok не принял файл (${up.status})`, true)
+  }
+  return String(publish_id)
+}
 function ttError(status: number, j: any) {
+  const e = ttErrorBase(status, j); (e as any).ttCode = j?.error?.code || ""; return e
+}
+function ttErrorBase(status: number, j: any) {
   const code = j?.error?.code || "", msg = j?.error?.message || `HTTP ${status}`
   if (code === "access_token_invalid" || status === 401) return new PlatformError("доступ к TikTok истёк, подключи аккаунт заново", false, 0, true)
   if (code === "spam_risk_too_many_posts" || code === "spam_risk_user_banned_from_posting") return new PlatformError("TikTok ограничил публикации для аккаунта на сегодня, повторю завтра", true, 24 * 60)
