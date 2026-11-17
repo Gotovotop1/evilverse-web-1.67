@@ -1,0 +1,19 @@
+# Автопостинг студии: раз в 10 минут просим сайт выложить всё, чьё время пришло.
+# Нужны секреты репозитория: STUDIO_CRON_URL (https://shop.evilverse.lol/api/studio/cron) и CRON_SECRET (тот же, что в Vercel).
+name: studio-cron
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Publish due posts
+        env:
+          URL: ${{ secrets.STUDIO_CRON_URL }}
+          KEY: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then echo "секреты не заданы — пропускаю"; exit 0; fi
+          curl -sS -m 70 --retry 2 -H "Authorization: Bearer $KEY" "$URL"
