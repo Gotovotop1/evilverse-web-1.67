@@ -13,6 +13,8 @@ export async function GET(req: Request) {
     login: {
       google: ready && platformConfigured("youtube"),
       telegram: ready && env("TELEGRAM_BOT_TOKEN") && env("TELEGRAM_LOGIN_BOT") ? env("TELEGRAM_LOGIN_BOT").replace(/^@/, "") : null,
+      // номер бота (часть ключа до двоеточия, не секрет) — для своей кнопки «Войти через Telegram» в студии
+      telegramId: ready && env("TELEGRAM_LOGIN_BOT") && /^\d+:/.test(env("TELEGRAM_BOT_TOKEN")) ? Number(env("TELEGRAM_BOT_TOKEN").split(":")[0]) : null,
       email: ready && (!!env("RESEND_API_KEY") && !!env("STUDIO_MAIL_FROM") || devCodes()),
     },
     platforms: { tiktok: ready && platformConfigured("tiktok"), youtube: ready && platformConfigured("youtube"), instagram: ready && platformConfigured("instagram") },
