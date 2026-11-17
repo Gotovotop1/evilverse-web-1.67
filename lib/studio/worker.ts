@@ -92,15 +92,21 @@ export async function runPost(post: any) {
 export async function processDue(opts: { limit?: number; userId?: number | string | null; budgetMs?: number } = {}) {
   const started = Date.now(), budget = opts.budgetMs ?? 45_000, out: Record<string, number> = {}
   for (let round = 0; round < 20 && Date.now() - started < budget; round++) {
+    // prev_lock: если публикация уже была взята в работу и не завершилась, значит прошлый запуск оборвался посреди загрузки
     const r = await pool.query(
-      `UPDATE studio_posts SET locked_at = now() WHERE id IN (
-         SELECT id FROM studio_posts WHERE status IN ('scheduled','processing') AND scheduled_at <= now()
+      `UPDATE studio_posts p SET locked_at = now() FROM (
+         SELECT id, locked_at AS prev_lock FROM studio_posts WHERE status IN ('scheduled','processing') AND scheduled_at <= now()
            AND (locked_at IS NULL OR locked_at < now() - interval '10 minutes') ${opts.userId ? "AND user_id = $2" : ""}
-         ORDER BY scheduled_at LIMIT $1 FOR UPDATE SKIP LOCKED) RETURNING *`,
+         ORDER BY scheduled_at LIMIT $1 FOR UPDATE SKIP LOCKED) s WHERE p.id = s.id RETURNING p.*, s.prev_lock`,
       opts.userId ? [1, opts.userId] : [1])
     const post = r.rows[0]
     if (!post) break
-    const st = await runPost(post)
+    let st
+    if (post.status === "scheduled" && post.prev_lock) {
+      // ролик мог уже выйти — повторять сами не будем, чтобы не было дубля
+      await finish(post.id, "failed", { error: "публикация прервалась на середине — проверь, вышел ли ролик, и нажми «Повторить», если нет" })
+      st = "interrupted"
+    } else st = await runPost(post)
     out[st] = (out[st] ?? 0) + 1
     if (opts.limit && Object.values(out).reduce((a, b) => a + b, 0) >= opts.limit) break
   }

@@ -37,9 +37,13 @@
 
 После изменения переменных — **Redeploy**.
 
-## 2. Вход в студию (любой из трёх способов)
+## 2. Вход в студию (любой из способов)
 
 - **Google** — тот же ключ, что для YouTube (шаг 3). Отдельно ничего не нужно.
+- **Discord** — [discord.com/developers/applications](https://discord.com/developers/applications) → New Application «EvilVerse Studio» (иконка — логотип студии) → **OAuth2**:
+  - Redirects → Add: `https://shop.evilverse.lol/api/studio/oauth/discord/callback` → Save;
+  - Client ID и Client Secret (Reset Secret) → в Vercel: `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`.
+  Студия берёт только имя, аватар и подтверждённую почту (scopes `identify email`), ключ Discord сразу отзывает. Проверка приложения у Discord не нужна.
 - **Telegram** — используется бот из `TELEGRAM_BOT_TOKEN` (уже есть). В @BotFather: `/setdomain` → выбрать этого бота → `studio.evilverse.lol`. В Vercel: `TELEGRAM_LOGIN_BOT` = имя бота без `@`.
 - **Почта** — [resend.com](https://resend.com): добавить домен `evilverse.lol` (DNS-записи в Namecheap), создать API-ключ. В Vercel: `RESEND_API_KEY` и `STUDIO_MAIL_FROM` = `EvilVerse Studio <studio@evilverse.lol>`.
 
@@ -111,7 +115,8 @@
 ## Проверено на стенде
 
 На поддельных API всех трёх платформ (локальный Postgres, сайт в режиме разработки):
-- вход по почте, Google и Telegram, в том числе отклонение поддельных подписей;
+- вход по почте, Google, Discord и Telegram, в том числе отклонение поддельных подписей и привязка Discord/Google к аккаунту с той же подтверждённой почтой;
+- оборванная посреди загрузки публикация не повторяется сама (нет дублей), а помечается «проверь и нажми „Повторить“»;
 - подключение трёх соцсетей, одноразовые билеты;
 - загрузка роликов и пачка из 2 роликов из студии;
 - публикация в TikTok (загрузка файла кусками, проверка статуса), YouTube (resumable upload, #Shorts, теги) и Instagram (контейнер → обработка → media_publish → ссылка);

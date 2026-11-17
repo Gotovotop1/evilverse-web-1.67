@@ -1,6 +1,6 @@
 import { pool } from "@/lib/db"
 import { backToStudio, createSession, handler, readState, seal, siteUrl, upsertUser } from "@/lib/studio/core"
-import { PLATFORMS, PlatformError } from "@/lib/studio/platforms"
+import { PLATFORMS, PlatformError, discord } from "@/lib/studio/platforms"
 
 export const dynamic = "force-dynamic"
 
@@ -19,6 +19,11 @@ export const GET = handler(async (req, ctx) => {
       const t = await PLATFORMS.youtube.exchange(code, redirect)
       const u = await upsertUser("google_sub", t.idUser.id, { email: t.idUser.email, name: t.idUser.name, avatar: t.idUser.avatar })
       return backToStudio({ signed_in: "google" }, { evs_token: await createSession(u.id) })
+    }
+    if (provider === "discord" && st.p === "login") {
+      const a = await discord.exchange(code, redirect)
+      const u = await upsertUser("discord_id", a.id, { email: a.email, name: a.name, avatar: a.avatar })
+      return backToStudio({ signed_in: "discord" }, { evs_token: await createSession(u.id) })
     }
     const userId = st.u
     if (!userId) return backToStudio({ connect_error: "Сначала войди в студию" })

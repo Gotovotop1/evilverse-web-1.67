@@ -13,7 +13,7 @@ export const maxDuration = 60
 async function run(req: Request) {
   const ok = bearerMatches(req, env("CRON_SECRET") || undefined)
   if (!ok) return fail(req, ok === null ? "CRON_SECRET не задан" : "Неверный ключ", ok === null ? 503 : 401)
-  const res = await processDue({ budgetMs: 50_000 })
+  const res = await processDue({ budgetMs: 25_000 }) // новый ролик не начинаем позже 25 с: загрузка должна успеть до 60 с
   return json(req, { ok: true, ...res })
 }
 export const GET = handler(run)
