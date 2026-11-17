@@ -121,6 +121,6 @@ export async function cleanup() {
   return r.rows.length
 }
 export async function deleteStored(url: string) {
-  if (/\.blob\.vercel-storage\.com\//.test(url) && env("BLOB_READ_WRITE_TOKEN")) { const { del } = await import("@vercel/blob"); await del(url) }
+  if (/\.blob\.vercel-storage\.com\//.test(url) && (env("BLOB_READ_WRITE_TOKEN") || env("BLOB_STORE_ID"))) { const { del } = await import("@vercel/blob"); await del(url) }
   else if (url.includes("/api/studio/local-blob/")) { const { localDelete } = await import("./storage"); await localDelete(url) }
 }
