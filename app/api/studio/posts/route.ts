@@ -17,7 +17,7 @@ export const GET = authed(async (req, u) => {
     `SELECT p.id, p.video_id, p.platform, p.title, p.caption, p.privacy, p.scheduled_at, p.status, p.attempts, p.remote_url, p.error, p.updated_at,
             v.url AS video_url, v.deleted_at IS NOT NULL AS video_deleted, v.duration, v.title AS video_title
        FROM studio_posts p JOIN studio_videos v ON v.id = p.video_id
-      WHERE p.user_id = $1 ORDER BY (p.status IN ('scheduled','processing')) DESC, p.scheduled_at DESC LIMIT 200`, [u.id])
+      WHERE p.user_id = $1 ORDER BY (p.status IN ('scheduled','processing','uploaded')) DESC, p.scheduled_at DESC LIMIT 200`, [u.id])
   return json(req, { posts: r.rows.map((x) => ({ ...x, id: String(x.id), video_id: String(x.video_id), video_url: x.video_deleted ? null : x.video_url })), now: new Date().toISOString() })
 })
 
@@ -48,7 +48,7 @@ export const POST = authed(async (req, u) => {
     const x = await pool.query(`INSERT INTO studio_posts (user_id, video_id, platform, title, caption, privacy, scheduled_at) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`, r)
     ids.push(String(x.rows[0].id))
   }
-  // то, что «прямо сейчас», не ждёт расписания
-  if (rows.some((r) => new Date(r[6]).getTime() <= Date.now() + 30_000)) await processDue({ userId: u.id, limit: 2, budgetMs: 20_000 }).catch((e) => console.error(e))
+  // то, что «прямо сейчас», не ждёт расписания; YouTube с выходом позже загружаем сразу — он сам выпустит ролик в назначенное время
+  if (rows.some((r) => new Date(r[6]).getTime() <= Date.now() + 30_000 || (r[2] === "youtube" && r[5] === "public"))) await processDue({ userId: u.id, limit: 2, budgetMs: 20_000 }).catch((e) => console.error(e))
   return json(req, { ok: true, ids })
 })

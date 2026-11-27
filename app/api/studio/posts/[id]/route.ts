@@ -12,6 +12,7 @@ export const PATCH = authed(async (req, u, ctx) => {
   const b = await req.json().catch(() => ({})) as { action?: string; at?: string; caption?: string }
   const p = (await pool.query(`SELECT * FROM studio_posts WHERE id = $1 AND user_id = $2`, [Number(id), u.id])).rows[0]
   if (!p) return fail(req, "Публикация не найдена", 404)
+  if (p.status === "uploaded") return fail(req, "Ролик уже загружен в YouTube и выйдет сам в назначенное время. Отменить, перенести или изменить описание — в YouTube Studio, вкладка «Запланированные».")
   if (b.action === "cancel") {
     if (p.status !== "scheduled") return fail(req, "Отменить можно только запланированную публикацию")
     await pool.query(`UPDATE studio_posts SET status = 'cancelled', updated_at = now() WHERE id = $1`, [p.id])

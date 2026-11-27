@@ -15,7 +15,8 @@ export type Tokens = { access: string; refresh?: string | null; expiresIn?: numb
 export type Account = { id: string; name?: string | null; avatar?: string | null; email?: string | null }
 export type PostRow = { id: number; platform: string; title: string | null; caption: string; privacy: string | null; remote_id: string | null; scheduled_at: string }
 export type VideoRow = { id: number; url: string; size: number; duration: number | null; mime: string | null }
-export type PublishResult = { state: "published" | "processing"; remoteId?: string | null; remoteUrl?: string | null; note?: string | null }
+// uploaded — ролик уже на платформе и выйдет сам в назначенное время (YouTube publishAt)
+export type PublishResult = { state: "published" | "processing" | "uploaded"; remoteId?: string | null; remoteUrl?: string | null; note?: string | null }
 
 export class PlatformError extends Error {
   constructor(message: string, public retry = false, public retryAfterMin = 15, public reconnect = false) { super(message) }
@@ -78,9 +79,12 @@ export const google = {
     let title = (post.title || post.caption.split("\n")[0] || "EvilVerse").replace(/[<>]/g, "").trim()
     if (!/#shorts/i.test(title + post.caption)) title = (title.slice(0, 90) + " #Shorts").trim()
     const tags = Array.from(new Set((post.caption.match(/#[\p{L}\p{N}_]+/gu) ?? []).map((t) => t.slice(1)))).slice(0, 15)
+    // выход позже: загружаем сразу приватным с publishAt — YouTube сам опубликует ролик ровно в назначенное время и покажет его в «Запланированных»
+    const privacy = ["public", "unlisted", "private"].includes(post.privacy ?? "") ? post.privacy : "public"
+    const at = new Date(post.scheduled_at).getTime(), later = privacy === "public" && Number.isFinite(at) && at > Date.now() + 3 * 60_000
     const meta = {
       snippet: { title: title.slice(0, 100), description: post.caption.replace(/[<>]/g, "").slice(0, 4900), tags, categoryId: "20" },
-      status: { privacyStatus: ["public", "unlisted", "private"].includes(post.privacy ?? "") ? post.privacy : "public", selfDeclaredMadeForKids: false },
+      status: later ? { privacyStatus: "private", publishAt: new Date(at).toISOString(), selfDeclaredMadeForKids: false } : { privacyStatus: privacy, selfDeclaredMadeForKids: false },
     }
     const init = await fetch(`${base("YOUTUBE_UPLOAD_URL", "https://www.googleapis.com/upload/youtube/v3/videos")}?uploadType=resumable&part=snippet,status`, {
       method: "POST",
@@ -93,7 +97,7 @@ export const google = {
     const up = await fetch(loc, { method: "PUT", headers: { "Content-Type": video.mime || "video/mp4", "Content-Length": String(bytes.length) }, body: bytes })
     const j = await readJson(up)
     if (!up.ok || !j.id) throw ytError(up.status, j)
-    return { state: "published", remoteId: j.id, remoteUrl: `https://youtube.com/shorts/${j.id}`,
+    return { state: later ? "uploaded" : "published", remoteId: j.id, remoteUrl: `https://youtube.com/shorts/${j.id}`,
       note: j.status?.uploadStatus === "rejected" ? "YouTube отклонил видео" : null }
   },
 }
