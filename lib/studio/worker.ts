@@ -3,6 +3,7 @@
  * © 2026 EvilVerse (evilverse.lol). Все права защищены.
  *
  * Статусы публикации: scheduled → (время пришло) → processing (платформа обрабатывает) → published
+ *                     YouTube с выходом позже: scheduled → (сразу) загрузка с publishAt → uploaded → (время пришло) → published
  *                     ошибка: временная → снова scheduled позже (до 5 попыток); постоянная → failed; отмена → cancelled
  */
 import { pool } from "@/lib/db"
@@ -65,6 +66,11 @@ export async function runPost(post: any) {
     } else {
       res = plat === "tiktok" ? await PLATFORMS.tiktok.publish(P, v, access) : plat === "youtube" ? await PLATFORMS.youtube.publish(P, v, access) : await PLATFORMS.instagram.publish(P, v, access, social.account_id)
     }
+    if (res.state === "uploaded") {
+      // уже в YouTube, выйдет сам; ссылка есть сразу — в «Запланированных» YouTube Studio
+      await finish(post.id, "uploaded", { remote_id: res.remoteId ?? post.remote_id, remote_url: res.remoteUrl ?? null, error: res.note ?? null })
+      return "uploaded"
+    }
     if (res.state === "processing") {
       await finish(post.id, "processing", { remote_id: res.remoteId ?? post.remote_id, error: res.note ?? null, scheduled_at: new Date(Date.now() + 60_000).toISOString() })
       return "processing"
@@ -74,8 +80,10 @@ export async function runPost(post: any) {
   } catch (e: any) {
     const pe = e instanceof PlatformError ? e : new PlatformError(String(e?.message || e), true)
     const attempts = (post.attempts ?? 0) + 1
+    // ранняя загрузка в YouTube (время выхода ещё впереди) не сдвигает выбранное время: следующая попытка — уже в само время выхода
+    const early = post.status === "scheduled" && new Date(post.scheduled_at).getTime() > Date.now() + 60_000
     if (pe.retry && attempts < MAX_ATTEMPTS && post.status !== "processing") {
-      await finish(post.id, "scheduled", { attempts, error: pe.message + ` (попытка ${attempts} из ${MAX_ATTEMPTS})`, scheduled_at: new Date(Date.now() + pe.retryAfterMin * 60_000).toISOString() })
+      await finish(post.id, "scheduled", { attempts, error: pe.message + ` (попытка ${attempts} из ${MAX_ATTEMPTS})`, ...(early ? {} : { scheduled_at: new Date(Date.now() + pe.retryAfterMin * 60_000).toISOString() }) })
       return "retry"
     }
     if (pe.retry && post.status === "processing" && attempts < MAX_ATTEMPTS * 4) {
@@ -91,11 +99,14 @@ export async function runPost(post: any) {
 /** Забирает подошедшие публикации (без двойной обработки при параллельных запусках) и выкладывает их. */
 export async function processDue(opts: { limit?: number; userId?: number | string | null; budgetMs?: number } = {}) {
   const started = Date.now(), budget = opts.budgetMs ?? 45_000, out: Record<string, number> = {}
+  // загруженные заранее в YouTube: время вышло — значит, YouTube уже опубликовал
+  await pool.query(`UPDATE studio_posts SET status = 'published', updated_at = now() WHERE status = 'uploaded' AND scheduled_at <= now() ${opts.userId ? "AND user_id = $1" : ""}`, opts.userId ? [opts.userId] : [])
   for (let round = 0; round < 20 && Date.now() - started < budget; round++) {
     // prev_lock: если публикация уже была взята в работу и не завершилась, значит прошлый запуск оборвался посреди загрузки
     const r = await pool.query(
       `UPDATE studio_posts p SET locked_at = now() FROM (
-         SELECT id, locked_at AS prev_lock FROM studio_posts WHERE status IN ('scheduled','processing') AND scheduled_at <= now()
+         SELECT id, locked_at AS prev_lock FROM studio_posts WHERE status IN ('scheduled','processing')
+           AND (scheduled_at <= now() OR (platform = 'youtube' AND status = 'scheduled' AND attempts = 0 AND COALESCE(privacy, 'public') = 'public'))
            AND (locked_at IS NULL OR locked_at < now() - interval '10 minutes') ${opts.userId ? "AND user_id = $2" : ""}
          ORDER BY scheduled_at LIMIT $1 FOR UPDATE SKIP LOCKED) s WHERE p.id = s.id RETURNING p.*, s.prev_lock`,
       opts.userId ? [1, opts.userId] : [1])
